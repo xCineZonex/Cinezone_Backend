@@ -37,9 +37,9 @@ public class LoyaltyServiceTest {
 
     @BeforeEach
     void setUp() {
-        tierAzul = LoyaltyTier.builder().id(1L).name("Azul").minPuntos(0).description("Beneficios Básicos").build();
-        tierOro = LoyaltyTier.builder().id(2L).name("Oro").minPuntos(500).description("Palomitas Gratis").build();
-        tierBlack = LoyaltyTier.builder().id(3L).name("Black").minPuntos(1500).description("Entradas VIP").build();
+        tierAzul = LoyaltyTier.builder().id(1L).name("Azul").minPuntos(0).requiredYearlyVisits(0).description("Beneficios Básicos").build();
+        tierOro = LoyaltyTier.builder().id(2L).name("Oro").minPuntos(500).requiredYearlyVisits(7).description("Palomitas Gratis").build();
+        tierBlack = LoyaltyTier.builder().id(3L).name("Black").minPuntos(1500).requiredYearlyVisits(16).description("Entradas VIP").build();
 
         socioUser = new User();
         socioUser.setId(UUID.randomUUID());
