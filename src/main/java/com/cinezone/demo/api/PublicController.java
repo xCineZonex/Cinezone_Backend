@@ -24,6 +24,7 @@ public class PublicController {
     private final com.cinezone.demo.repository.ShowtimeRepository showtimeRepository;
     private final com.cinezone.demo.service.BookingService bookingService;
     private final com.cinezone.demo.repository.TicketBenefitRepository ticketBenefitRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     @GetMapping("/sedes")
     public ResponseEntity<List<com.cinezone.demo.dto.CinemaDTO>> getSedes() {
         List<com.cinezone.demo.model.entity.Cinema> cinemas = cinemaRepository.findAll();
@@ -42,16 +43,15 @@ public class PublicController {
 
     @jakarta.annotation.PostConstruct
     public void init() {
-        try (java.sql.Connection conn = java.sql.DriverManager.getConnection("jdbc:postgresql://localhost:5432/cinezone_db", "postgres", "blae");
-             java.sql.Statement stmt = conn.createStatement()) {
-            stmt.execute("ALTER TABLE productos DROP CONSTRAINT IF EXISTS productos_categoria_check");
-            stmt.execute("ALTER TABLE combo_recipes DROP COLUMN IF EXISTS quantity");
-            stmt.execute("ALTER TABLE combo_recipes DROP COLUMN IF EXISTS combo_product_id");
-            stmt.execute("ALTER TABLE combo_recipes DROP COLUMN IF EXISTS ingredient_product_id");
+        try {
+            jdbcTemplate.execute("ALTER TABLE productos DROP CONSTRAINT IF EXISTS productos_categoria_check");
+            jdbcTemplate.execute("ALTER TABLE combo_recipes DROP COLUMN IF EXISTS quantity");
+            jdbcTemplate.execute("ALTER TABLE combo_recipes DROP COLUMN IF EXISTS combo_product_id");
+            jdbcTemplate.execute("ALTER TABLE combo_recipes DROP COLUMN IF EXISTS ingredient_product_id");
             // Fix for is_active column migration on existing data
-            stmt.execute("ALTER TABLE productos_stock ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true");
-            stmt.execute("UPDATE productos_stock SET is_active = true WHERE is_active IS NULL");
-            stmt.execute("ALTER TABLE productos_stock ALTER COLUMN is_active SET NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE productos_stock ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true");
+            jdbcTemplate.execute("UPDATE productos_stock SET is_active = true WHERE is_active IS NULL");
+            jdbcTemplate.execute("ALTER TABLE productos_stock ALTER COLUMN is_active SET NOT NULL");
         } catch (Exception e) {
             e.printStackTrace();
         }
