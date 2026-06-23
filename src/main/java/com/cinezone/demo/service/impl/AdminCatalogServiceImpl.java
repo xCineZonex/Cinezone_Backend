@@ -1,0 +1,693 @@
+package com.cinezone.demo.service.impl;
+
+import com.cinezone.demo.dto.AdminCatalogDTOs.*;
+import com.cinezone.demo.exception.ResourceNotFoundException;
+import com.cinezone.demo.model.entity.*;
+import com.cinezone.demo.model.enums.MovieStatus;
+import com.cinezone.demo.model.enums.SeatType;
+import com.cinezone.demo.repository.*;
+import com.cinezone.demo.service.AdminCatalogService;
+import com.cinezone.demo.service.AuditService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Service
+@RequiredArgsConstructor
+public class AdminCatalogServiceImpl implements AdminCatalogService {
+
+    private final MovieRepository movieRepository;
+    private final CinemaRepository cinemaRepository;
+    private final AuditoriumRepository auditoriumRepository;
+    private final SeatRepository seatRepository;
+    private final ShowtimeRepository showtimeRepository;
+    private final ProductRepository productRepository;
+    private final LoyaltyTierRepository tierRepository;
+    private final MovieDistributionRepository movieDistributionRepository;
+    private final AuditService auditService;
+    private final EntityManager entityManager;
+    private final UserRepository userRepository;
+    private final ComboRecipeRepository comboRecipeRepository;
+    private final ProductStockRepository productStockRepository;
+    private final BookingRepository bookingRepository;
+    private final TicketBasePriceRepository ticketBasePriceRepository;
+
+    private void validateOwnershipGuard(Long targetSedeId) {
+        String correo = getCurrentUser();
+        if ("SYSTEM".equals(correo)) return;
+        User user = userRepository.findByCorreo(correo).orElse(null);
+        if (user != null && user.getRol() == com.cinezone.demo.model.enums.Role.ADMIN_SEDE) {
+            if (user.getSedes().isEmpty() || user.getSedes().stream().noneMatch(s -> s.getId().equals(targetSedeId))) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("No tienes permiso sobre esta sede");
+            }
+        }
+    }
+
+    private String getCurrentUser() {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.getName() != null) ? auth.getName() : "SYSTEM";
+    }
+
+    @Override
+    @Transactional
+    public Movie createMovie(MovieCreateDTO request) {
+        LocalDate fechaFin = request.fechaFinCartelera() != null 
+            ? request.fechaFinCartelera() 
+            : request.fechaEstreno().plusDays(21);
+
+        Movie movie = Movie.builder()
+                .titulo(request.titulo()).sinopsis(request.sinopsis())
+                .duracionMinutos(request.duracionMinutos()).genero(request.genero())
+                .clasificacion(request.clasificacion()).idioma(request.idioma())
+                .posterUrl(request.posterUrl()).trailerUrl(request.trailerUrl())
+                .fechaEstreno(request.fechaEstreno())
+                .estado(request.estado() != null ? request.estado() : MovieStatus.EN_CARTELERA)
+                .fechaFinCartelera(fechaFin)
+                .build();
+        movie = movieRepository.save(movie);
+        auditService.logAction("Movie", movie.getId(), "CREATE", getCurrentUser(), "Película creada: " + movie.getTitulo());
+        return movie;
+    }
+
+    @Override
+    @Transactional
+    public Cinema createCinema(CinemaCreateDTO request) {
+        Cinema cinema = Cinema.builder()
+                .nombre(request.nombre()).direccion(request.direccion())
+                .ciudad(request.ciudad()).imagen(request.imagen()).activa(true)
+                .build();
+        return cinemaRepository.save(cinema);
+    }
+
+    @Override
+    @Transactional
+    public Auditorium createAuditoriumWithSeats(AuditoriumCreateDTO request) {
+        Cinema cinema = cinemaRepository.findById(request.cinemaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada"));
+
+        validateOwnershipGuard(cinema.getId());
+
+        // CORRECCIÓN 1: Usamos capacidadTotal() y quitamos el tipo() porque tu entidad no lo tiene
+        Auditorium auditorium = Auditorium.builder()
+                .nombre(request.nombre())
+                .capacidadTotal(request.capacidad())
+                .cinema(cinema)
+                .activa(true)
+                .build();
+        auditorium = auditoriumRepository.save(auditorium);
+
+        // CORRECCIÓN 2: Usamos SeatType.ESTANDAR
+        for (int i = 1; i <= request.capacidad(); i++) {
+            seatRepository.save(Seat.builder()
+                    .fila('A')
+                    .numero(i)
+                    .tipo(SeatType.ESTANDAR)
+                    .auditorium(auditorium)
+                    .build());
+        }
+        return auditorium;
+    }
+
+    @Override
+    @Transactional
+    public Showtime createShowtime(ShowtimeCreateDTO request) {
+        Movie movie = movieRepository.findById(request.movieId())
+                .orElseThrow(() -> new ResourceNotFoundException("Película no encontrada"));
+        Auditorium auditorium = auditoriumRepository.findById(request.auditoriumId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sala no encontrada"));
+        Cinema cinema = cinemaRepository.findById(request.cinemaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada"));
+
+        validateOwnershipGuard(cinema.getId());
+
+        // VALIDACIÓN DE DISTRIBUCIÓN
+        if (!movieDistributionRepository.existsByMovieIdAndCinemaId(movie.getId(), cinema.getId())) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("Esta película no ha sido asignada a esta Sede por la central.");
+        }
+
+        // VALIDACIÓN DE PELÍCULA EN CARTELERA
+        if (movie.getEstado() != com.cinezone.demo.model.enums.MovieStatus.EN_CARTELERA) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("No se pueden programar funciones para películas que no están en cartelera.");
+        }
+
+        // VALIDACIÓN DE FECHA DE ESTRENO
+        if (request.fechaHora().toLocalDate().isBefore(movie.getFechaEstreno())) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("La fecha de la función no puede ser anterior a la fecha de estreno (" + movie.getFechaEstreno() + ").");
+        }
+
+        // VALIDACIÓN DE FECHA FIN DE CARTELERA (Derechos de exhibición)
+        if (movie.getFechaFinCartelera() != null && request.fechaHora().toLocalDate().isAfter(movie.getFechaFinCartelera())) {
+            throw new com.cinezone.demo.exception.BusinessRuleException(
+                "Contrato vencido: No se puede programar la función para el " + request.fechaHora().toLocalDate() + 
+                " porque la película sale de cartelera el " + movie.getFechaFinCartelera() + "."
+            );
+        }
+
+        // VALIDACIÓN DE TRASLAPE
+        LocalDateTime inicioNueva = request.fechaHora();
+        LocalDateTime finNueva = inicioNueva.plusMinutes(movie.getDuracionMinutos() + 30);
+
+        java.util.List<Showtime> activas = showtimeRepository.findByAuditoriumIdAndActivaTrue(auditorium.getId());
+        for (Showtime existente : activas) {
+            LocalDateTime inicioExistente = existente.getFechaHora();
+            LocalDateTime finExistente = inicioExistente.plusMinutes(existente.getMovie().getDuracionMinutos() + 30);
+            
+            if (inicioNueva.isBefore(finExistente) && inicioExistente.isBefore(finNueva)) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("Cruce de horarios detectado en esta sala.");
+            }
+        }
+
+        // PRECIOS DINÁMICOS (Dynamic Pricing)
+        java.math.BigDecimal multiplicador = java.math.BigDecimal.ONE;
+        
+        switch(request.formatoProyeccion().name()) {
+            case "FORMAT_3D": multiplicador = multiplicador.add(new java.math.BigDecimal("0.20")); break; // +20%
+            case "IMAX": multiplicador = multiplicador.add(new java.math.BigDecimal("0.50")); break; // +50%
+            case "FORMAT_4DX": multiplicador = multiplicador.add(new java.math.BigDecimal("0.60")); break; // +60%
+        }
+        
+        // Jueves de estrenos
+        if (request.fechaHora().getDayOfWeek() == java.time.DayOfWeek.THURSDAY) {
+            multiplicador = multiplicador.add(new java.math.BigDecimal("0.10")); // +10%
+        }
+
+        Showtime showtime = Showtime.builder()
+                .movie(movie).auditorium(auditorium).cinema(cinema)
+                .fechaHora(request.fechaHora()).idioma(request.idioma())
+                .formatoProyeccion(request.formatoProyeccion()).activa(true)
+                .precioMultiplicador(multiplicador)
+                .build();
+        return showtimeRepository.save(showtime);
+    }
+    @Override
+    @Transactional
+    public Movie changeMovieStatus(Long movieId, String newStatus) {
+        Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new ResourceNotFoundException("Película no encontrada"));
+
+        // Convertimos el texto (Ej: "RETIRADA") al valor del Enum
+        movie.setEstado(MovieStatus.valueOf(newStatus.toUpperCase()));
+        return movieRepository.save(movie);
+    }
+
+    @Override
+    @Transactional
+    public MovieDistribution distributeMovie(Long movieId, Long sedeId) {
+        Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new ResourceNotFoundException("Película no encontrada"));
+        Cinema cinema = cinemaRepository.findById(sedeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada"));
+
+        if (movieDistributionRepository.existsByMovieIdAndCinemaId(movieId, sedeId)) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("La película ya está asignada a esta sede.");
+        }
+
+        MovieDistribution distribution = MovieDistribution.builder()
+                .movie(movie)
+                .cinema(cinema)
+                .fechaAsignacion(LocalDateTime.now())
+                .build();
+        
+        distribution = movieDistributionRepository.save(distribution);
+        auditService.logAction("MovieDistribution", distribution.getId(), "CREATE", getCurrentUser(), "Película asignada a sede: " + cinema.getNombre());
+        return distribution;
+    }
+
+    @Override
+    @Transactional
+    public Auditorium toggleAuditoriumMaintenance(Long auditoriumId, boolean enMantenimiento) {
+        Auditorium auditorium = auditoriumRepository.findById(auditoriumId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sala no encontrada"));
+
+        validateOwnershipGuard(auditorium.getCinema().getId());
+
+        // Si entra en mantenimiento (true), la sala se desactiva (activa = false)
+        auditorium.setActiva(!enMantenimiento);
+        return auditoriumRepository.save(auditorium);
+        }
+
+        @Override
+        @Transactional
+        public Product createProduct(com.cinezone.demo.dto.AdminCatalogDTOs.ProductCreateDTO request) {
+        LoyaltyTier requiredTier = null;
+        if (request.requiredTierId() != null) {
+            requiredTier = tierRepository.findById(request.requiredTierId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Nivel de fidelidad no encontrado"));
+        }
+
+        Cinema cinema = null;
+        if (request.cinemaId() != null) {
+            cinema = cinemaRepository.findById(request.cinemaId()).orElse(null);
+        }
+
+        Product product = Product.builder()
+                .nombre(request.nombre())
+                .descripcion(request.descripcion())
+                .precio(request.precio())
+                .precioPuntos(request.precioPuntos() != null ? request.precioPuntos() : 0)
+                .categoria(request.categoria())
+                .requiredTier(requiredTier)
+                .imagen(request.imagen())
+                .disponible(true)
+                .cinema(cinema)
+                .build();
+                
+        // Set esInsumo directly via setter
+        if (request.esInsumo() != null) {
+            product.setEsInsumo(request.esInsumo());
+        } else {
+            product.setEsInsumo(false);
+        }
+        
+        product = productRepository.save(product);
+
+        // Si se define un stock inicial y una sede, inicializarlo de inmediato
+        if (request.stockGenerado() != null && request.stockGenerado() > 0 && request.cinemaId() != null) {
+            com.cinezone.demo.model.entity.ProductStock stock = new com.cinezone.demo.model.entity.ProductStock();
+            stock.setProduct(product);
+            com.cinezone.demo.model.entity.Cinema stockCinema = new com.cinezone.demo.model.entity.Cinema();
+            stockCinema.setId(request.cinemaId());
+            stock.setCinema(stockCinema);
+            stock.setStock(request.stockGenerado());
+            productStockRepository.save(stock);
+        }
+
+        auditService.logAction("Product", product.getId(), "CREATE", getCurrentUser(), "Producto creado: " + product.getNombre());
+        return product;
+    }
+
+    @Override
+    @Transactional
+    public Movie updateMovie(Long id, MovieUpdateDTO request) {
+        Movie movie = movieRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Película no encontrada"));
+        if (request.titulo() != null) movie.setTitulo(request.titulo());
+        if (request.sinopsis() != null) movie.setSinopsis(request.sinopsis());
+        if (request.duracionMinutos() != null) movie.setDuracionMinutos(request.duracionMinutos());
+        if (request.genero() != null) movie.setGenero(request.genero());
+        if (request.clasificacion() != null) movie.setClasificacion(request.clasificacion());
+        if (request.idioma() != null) movie.setIdioma(request.idioma());
+        if (request.estado() != null) movie.setEstado(request.estado());
+        if (request.posterUrl() != null) movie.setPosterUrl(request.posterUrl());
+        if (request.trailerUrl() != null) movie.setTrailerUrl(request.trailerUrl());
+        if (request.fechaEstreno() != null) movie.setFechaEstreno(request.fechaEstreno());
+        if (request.fechaFinCartelera() != null) movie.setFechaFinCartelera(request.fechaFinCartelera());
+        movie = movieRepository.save(movie);
+        auditService.logAction("Movie", movie.getId(), "UPDATE", getCurrentUser(), "Película actualizada");
+        return movie;
+    }
+
+    @Override
+    @Transactional
+    public Cinema updateCinema(Long id, CinemaUpdateDTO request) {
+        Cinema cinema = cinemaRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada"));
+        if (request.nombre() != null) cinema.setNombre(request.nombre());
+        if (request.direccion() != null) cinema.setDireccion(request.direccion());
+        if (request.ciudad() != null) cinema.setCiudad(request.ciudad());
+        if (request.imagen() != null) cinema.setImagen(request.imagen());
+        if (request.activa() != null) cinema.setActiva(request.activa());
+        return cinemaRepository.save(cinema);
+    }
+
+    @Override
+    @Transactional
+    public Auditorium updateAuditorium(Long id, AuditoriumUpdateDTO request) {
+        Auditorium auditorium = auditoriumRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Sala no encontrada"));
+        
+        validateOwnershipGuard(auditorium.getCinema().getId());
+        if (request.nombre() != null) auditorium.setNombre(request.nombre());
+        if (request.capacidadTotal() != null) auditorium.setCapacidadTotal(request.capacidadTotal());
+        if (request.activa() != null) auditorium.setActiva(request.activa());
+        return auditoriumRepository.save(auditorium);
+    }
+
+    @Override
+    @Transactional
+    public Showtime updateShowtime(Long id, ShowtimeUpdateDTO request) {
+        Showtime showtime = showtimeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Función no encontrada"));
+        
+        validateOwnershipGuard(showtime.getCinema().getId());
+        if (request.fechaHora() != null) showtime.setFechaHora(request.fechaHora());
+        if (request.idioma() != null) showtime.setIdioma(request.idioma());
+        if (request.formatoProyeccion() != null) showtime.setFormatoProyeccion(request.formatoProyeccion());
+        if (request.activa() != null) {
+            // Si intenta desactivar la función, verificar que no tenga tickets vendidos
+            if (!request.activa() && showtime.getActiva()) {
+                boolean hasBookings = bookingRepository.existsByShowtimeIdAndEstadoIn(
+                        showtime.getId(),
+                        java.util.List.of(com.cinezone.demo.model.enums.BookingStatus.VALIDA, 
+                                          com.cinezone.demo.model.enums.BookingStatus.USADA, 
+                                          com.cinezone.demo.model.enums.BookingStatus.PENDIENTE)
+                );
+                if (hasBookings) {
+                    throw new com.cinezone.demo.exception.BusinessRuleException("No se puede eliminar/desactivar esta función porque ya tiene asientos comprados o reservados.");
+                }
+            }
+            showtime.setActiva(request.activa());
+        }
+        
+        // VALIDACIÓN DE TRASLAPE
+        if (showtime.getActiva()) {
+            LocalDateTime inicioNueva = showtime.getFechaHora();
+            LocalDateTime finNueva = inicioNueva.plusMinutes(showtime.getMovie().getDuracionMinutos() + 30);
+            
+            java.util.List<Showtime> activas = showtimeRepository.findByAuditoriumIdAndActivaTrue(showtime.getAuditorium().getId());
+            for (Showtime existente : activas) {
+                if (existente.getId().equals(showtime.getId())) continue;
+                
+                LocalDateTime inicioExistente = existente.getFechaHora();
+                LocalDateTime finExistente = inicioExistente.plusMinutes(existente.getMovie().getDuracionMinutos() + 30);
+                
+                if (inicioNueva.isBefore(finExistente) && inicioExistente.isBefore(finNueva)) {
+                    throw new com.cinezone.demo.exception.BusinessRuleException("Cruce de horarios detectado en esta sala.");
+                }
+            }
+        }
+        
+        return showtimeRepository.save(showtime);
+    }
+
+    @Override
+    @Transactional
+    public Seat updateSeat(Long id, SeatUpdateDTO request) {
+        Seat seat = seatRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Asiento no encontrado"));
+        if (request.fila() != null) seat.setFila(request.fila());
+        if (request.numero() != null) seat.setNumero(request.numero());
+        if (request.tipo() != null) seat.setTipo(request.tipo());
+        return seatRepository.save(seat);
+    }
+
+    @Override
+    @Transactional
+    public Seat toggleSeatMaintenance(Long id, boolean estado) {
+        Seat seat = seatRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Asiento no encontrado"));
+        seat.setEnMantenimiento(estado);
+        return seatRepository.save(seat);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<Movie> getAllMovies() {
+        return movieRepository.findAll();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<Showtime> getAllShowtimes() {
+        return showtimeRepository.findAll();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<Auditorium> getAuditoriumsByCinema(Long cinemaId) {
+        return auditoriumRepository.findByCinemaId(cinemaId);
+    }
+
+    // ── EDITOR DE LIENZO INTERACTIVO ──────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public Auditorium saveAuditoriumLayout(AuditoriumLayoutDTO request) {
+        Cinema cinema = cinemaRepository.findById(request.cinemaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada"));
+
+        validateOwnershipGuard(cinema.getId());
+
+        // Crear la sala (siempre nueva desde el editor)
+        Auditorium auditorium = Auditorium.builder()
+                .nombre(request.nombre())
+                .cinema(cinema)
+                .capacidadTotal(request.asientos().size())
+                .activa(true)
+                .build();
+        auditorium = auditoriumRepository.save(auditorium);
+
+        // Guardar cada asiento con sus coordenadas de cuadrícula
+        // Fila: convierte número 1→A, 2→B, etc.
+        for (var item : request.asientos()) {
+            char filaChar = (char) ('A' + (item.gridRow() - 1));
+            SeatType tipo = SeatType.valueOf(item.tipo());
+            seatRepository.save(Seat.builder()
+                    .auditorium(auditorium)
+                    .fila(filaChar)
+                    .numero(item.gridCol())
+                    .tipo(tipo)
+                    .gridRow(item.gridRow())
+                    .gridCol(item.gridCol())
+                    .enMantenimiento(item.enMantenimiento() != null ? item.enMantenimiento() : false)
+                    .build());
+        }
+        return auditorium;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<Seat> getAuditoriumSeats(Long auditoriumId) {
+        return seatRepository.findByAuditoriumId(auditoriumId);
+    }
+
+    @Override
+    @Transactional
+    public Auditorium updateAuditoriumLayout(Long auditoriumId, AuditoriumLayoutDTO request) {
+        Auditorium auditorium = auditoriumRepository.findById(auditoriumId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sala no encontrada"));
+
+        validateOwnershipGuard(auditorium.getCinema().getId());
+
+        // Actualizar nombre si vino en el request
+        if (request.nombre() != null && !request.nombre().isBlank()) {
+            auditorium.setNombre(request.nombre());
+        }
+
+        // Borrar todos los asientos actuales y reemplazarlos con el nuevo diseño
+        seatRepository.deleteAllByAuditoriumId(auditoriumId);
+        // Forzar que JPA ejecute los DELETE antes de los INSERT
+        seatRepository.flush();
+        entityManager.clear();
+
+        // Guardar los nuevos asientos con coordenadas
+        for (var item : request.asientos()) {
+            char filaChar = (char) ('A' + (item.gridRow() - 1));
+            SeatType tipo = SeatType.valueOf(item.tipo());
+            seatRepository.save(Seat.builder()
+                    .auditorium(auditorium)
+                    .fila(filaChar)
+                    .numero(item.gridCol())
+                    .tipo(tipo)
+                    .gridRow(item.gridRow())
+                    .gridCol(item.gridCol())
+                    .enMantenimiento(item.enMantenimiento() != null ? item.enMantenimiento() : false)
+                    .build());
+        }
+
+        auditorium.setCapacidadTotal(request.asientos().size());
+        return auditoriumRepository.save(auditorium);
+    }
+
+    @Override
+    @Transactional
+    public Product updateProduct(Long id, ProductUpdateDTO request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+        product.setNombre(request.nombre());
+        product.setDescripcion(request.descripcion());
+        product.setPrecio(request.precio());
+        if (request.precioPuntos() != null) {
+            product.setPrecioPuntos(request.precioPuntos());
+        }
+        product.setCategoria(request.categoria());
+        
+        if (request.requiredTierId() != null) {
+            if (request.requiredTierId() == -1L || request.requiredTierId() == 0L) { // -1 or 0 for removing restriction
+                product.setRequiredTier(null);
+            } else {
+                LoyaltyTier requiredTier = tierRepository.findById(request.requiredTierId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Nivel de fidelidad no encontrado"));
+                product.setRequiredTier(requiredTier);
+            }
+        }
+        
+        if (request.imagen() != null) {
+            product.setImagen(request.imagen());
+        }
+        product = productRepository.save(product);
+        auditService.logAction("Product", product.getId(), "UPDATE", getCurrentUser(), "Producto actualizado");
+        return product;
+    }
+
+    @Override
+    @Transactional
+    public void deleteProduct(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+                
+        // 1. Si es combo, borrar recetas asociadas donde actúe como combo
+        comboRecipeRepository.deleteByComboProductId(id);
+        
+        // 2. Si es insumo, borrar recetas asociadas donde actúe como ingrediente
+        comboRecipeRepository.deleteByIngredientProductId(id);
+        
+        // 3. Borrar el stock asociado
+        productStockRepository.deleteByProductId(id);
+        
+        // 4. Borrar el producto en sí
+        try {
+            productRepository.delete(product);
+            auditService.logAction("Product", id, "DELETE", getCurrentUser(), "Producto eliminado: " + product.getNombre());
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("No se puede eliminar el producto porque tiene un historial de ventas (pedidos). Por favor, desactívalo en lugar de eliminarlo.");
+        }
+    }
+
+    @Override
+    @Transactional
+    public Product toggleProductAvailability(Long id, boolean disponible) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+        product.setDisponible(disponible);
+        return productRepository.save(product);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<Product> getAllProductsAdmin(Boolean esInsumo) {
+        if (esInsumo != null) {
+            return productRepository.findByEsInsumo(esInsumo);
+        }
+        return productRepository.findAll();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<LoyaltyTier> getAllLoyaltyTiers() {
+        return tierRepository.findAll();
+    }
+
+    @Override
+    @Transactional
+    public LoyaltyTier updateLoyaltyTier(Long id, Integer maxMonthlyBenefits) {
+        LoyaltyTier tier = tierRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Nivel no encontrado"));
+        tier.setMaxMonthlyBenefits(maxMonthlyBenefits);
+        return tierRepository.save(tier);
+    }
+
+    @Override
+    @Transactional
+    public void defineComboRecipe(ComboRecipeDTO request) {
+        Product combo = productRepository.findById(request.comboProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("Combo no encontrado"));
+        
+        comboRecipeRepository.deleteByComboProductId(combo.getId());
+        
+        for (IngredientDTO ingDTO : request.ingredients()) {
+            Product ingredient = productRepository.findById(ingDTO.ingredientProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Insumo no encontrado: " + ingDTO.ingredientProductId()));
+                    
+            ComboRecipe recipe = ComboRecipe.builder()
+                    .comboProduct(combo)
+                    .ingredientProduct(ingredient)
+                    .quantity(ingDTO.quantity())
+                    .build();
+            comboRecipeRepository.save(recipe);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void generateComboStock(ComboStockGenerateDTO request) {
+        Product combo = productRepository.findById(request.comboProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("Combo no encontrado"));
+                
+        Cinema cinema = cinemaRepository.findById(request.cinemaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada"));
+                
+        java.util.List<ComboRecipe> recipes = comboRecipeRepository.findByComboProductId(combo.getId());
+        if (recipes.isEmpty()) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("El producto no tiene receta de combo configurada");
+        }
+        
+        // 1. Validar que todos los insumos tienen stock suficiente
+        for (ComboRecipe recipe : recipes) {
+            ProductStock ingredientStock = productStockRepository.findByProductIdAndCinemaId(
+                    recipe.getIngredientProduct().getId(), cinema.getId())
+                    .orElseThrow(() -> new com.cinezone.demo.exception.BusinessRuleException(
+                            "No hay stock registrado para el insumo: " + recipe.getIngredientProduct().getNombre()));
+                            
+            int requiredAmount = recipe.getQuantity() * request.quantityToGenerate();
+            if (ingredientStock.getStock() < requiredAmount) {
+                throw new com.cinezone.demo.exception.BusinessRuleException(
+                        "Stock insuficiente para el insumo: " + recipe.getIngredientProduct().getNombre() + 
+                        ". Requerido: " + requiredAmount + ", Disponible: " + ingredientStock.getStock());
+            }
+        }
+        
+        // 2. Si todos tienen stock suficiente, deducir el stock de cada insumo
+        for (ComboRecipe recipe : recipes) {
+            ProductStock ingredientStock = productStockRepository.findByProductIdAndCinemaId(
+                    recipe.getIngredientProduct().getId(), cinema.getId()).get();
+                            
+            int requiredAmount = recipe.getQuantity() * request.quantityToGenerate();
+            ingredientStock.setStock(ingredientStock.getStock() - requiredAmount);
+            productStockRepository.save(ingredientStock);
+        }
+        
+        ProductStock comboStock = productStockRepository.findByProductIdAndCinemaId(combo.getId(), cinema.getId())
+                .orElseGet(() -> {
+                    ProductStock newStock = ProductStock.builder()
+                            .product(combo)
+                            .cinema(cinema)
+                            .stock(0)
+                            .build();
+                    return productStockRepository.save(newStock);
+                });
+                
+        comboStock.setStock(comboStock.getStock() + request.quantityToGenerate());
+        productStockRepository.save(comboStock);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<com.cinezone.demo.dto.AdminCatalogDTOs.IngredientDetailDTO> getComboRecipe(Long comboId) {
+        return comboRecipeRepository.findByComboProductId(comboId).stream()
+                .map(recipe -> new com.cinezone.demo.dto.AdminCatalogDTOs.IngredientDetailDTO(
+                        recipe.getIngredientProduct().getId(),
+                        recipe.getIngredientProduct().getNombre(),
+                        recipe.getQuantity()
+                ))
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public void removeMovieDistribution(Long movieId, Long sedeId) {
+        if (showtimeRepository.existsByMovieIdAndCinemaId(movieId, sedeId)) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("No se puede quitar la película porque ya tiene funciones programadas en esta sede.");
+        }
+        movieDistributionRepository.findByMovieIdAndCinemaId(movieId, sedeId)
+                .ifPresent(movieDistributionRepository::delete);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<Movie> getMoviesBySede(Long sedeId) {
+        return movieDistributionRepository.findAllByCinemaId(sedeId).stream()
+                .map(MovieDistribution::getMovie)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<TicketBasePrice> getTicketBasePrices() {
+        return ticketBasePriceRepository.findAll();
+    }
+
+    @Override
+    @Transactional
+    public TicketBasePrice saveTicketBasePrice(TicketBasePrice request) {
+        return ticketBasePriceRepository.save(request);
+    }
+}

@@ -1,0 +1,33 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    paths:
+      - 'cinezone/**'
+  pull_request:
+    branches: [ "main", "master" ]
+    paths:
+      - 'cinezone/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v3
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build and Test with Maven
+      working-directory: ./cinezone
+      run: mvn -B verify --file pom.xml
+      
+    # Aquí irá el paso de DEPLOY (Despliegue) dependiendo de si usas Render, AWS, o Docker.
+    # - name: Deploy to Production
+    #   ...
