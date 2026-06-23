@@ -3,12 +3,8 @@ name: Backend CI/CD
 on:
   push:
     branches: [ "main", "master" ]
-    paths:
-      - 'cinezone/**'
   pull_request:
     branches: [ "main", "master" ]
-    paths:
-      - 'cinezone/**'
 
 jobs:
   build:
