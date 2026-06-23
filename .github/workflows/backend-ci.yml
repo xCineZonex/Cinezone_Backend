@@ -25,7 +25,6 @@ jobs:
         cache: maven
 
     - name: Build and Test with Maven
-      working-directory: ./cinezone
       run: mvn -B verify --file pom.xml
       
     # Aquí irá el paso de DEPLOY (Despliegue) dependiendo de si usas Render, AWS, o Docker.
