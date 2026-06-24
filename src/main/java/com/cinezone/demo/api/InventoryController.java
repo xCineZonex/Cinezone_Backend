@@ -54,6 +54,11 @@ public class InventoryController {
     public ResponseEntity<Void> updateLocalPrice(@PathVariable Long productId, @PathVariable Long sedeId, @RequestParam java.math.BigDecimal precioLocal) {
         com.cinezone.demo.model.entity.ProductStock stock = productStockRepository.findByProductIdAndCinemaId(productId, sedeId)
                 .orElseThrow(() -> new RuntimeException("Stock no encontrado"));
+                
+        if (precioLocal != null && precioLocal.compareTo(stock.getProduct().getPrecio()) < 0) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("El precio local no puede ser menor al precio base global (S/ " + stock.getProduct().getPrecio() + ")");
+        }
+        
         stock.setPrecioLocal(precioLocal);
         productStockRepository.save(stock);
         return ResponseEntity.ok().build();
