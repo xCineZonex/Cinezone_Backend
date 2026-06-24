@@ -18,6 +18,7 @@ public class InventoryDTOs {
             Long id,
             Long productId,
             String productName,
+            Long sedeId,
             String type,
             Integer cantidad,
             Integer resultingStock,

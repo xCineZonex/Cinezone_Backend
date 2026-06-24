@@ -87,9 +87,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         movement = movementRepository.save(movement);
 
-        if (!Boolean.TRUE.equals(product.getEsInsumo())) {
-            redisStockService.syncStock(product.getId(), actualSedeId, newStock);
-        }
+        redisStockService.syncStock(product.getId(), actualSedeId, newStock);
 
         return mapToDTO(movement);
     }
@@ -111,6 +109,7 @@ public class InventoryServiceImpl implements InventoryService {
                 m.getId(),
                 m.getProduct().getId(),
                 m.getProduct().getNombre(),
+                m.getCinema() != null ? m.getCinema().getId() : null,
                 m.getType().name(),
                 m.getCantidad(),
                 m.getResultingStock(),

@@ -30,9 +30,9 @@ public class InventoryController {
 
     @GetMapping("/insumos/sede/{sedeId}")
     public ResponseEntity<List<com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO>> getInsumosBySede(@PathVariable Long sedeId) {
-        // As a fallback, returning all products that are insumos.
-        List<com.cinezone.demo.model.entity.Product> allProducts = productRepository.findAll();
-        List<com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO> insumos = allProducts.stream()
+        List<com.cinezone.demo.model.entity.ProductStock> stocks = productStockRepository.findByCinemaId(sedeId);
+        List<com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO> insumos = stocks.stream()
+            .map(com.cinezone.demo.model.entity.ProductStock::getProduct)
             .filter(p -> p.getEsInsumo() != null && p.getEsInsumo())
             .map(p -> new com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO(
                     p.getId(), p.getNombre(), p.getDescripcion(), p.getPrecio(),

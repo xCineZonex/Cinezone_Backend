@@ -8,6 +8,7 @@ import com.cinezone.demo.model.enums.SeatType;
 import com.cinezone.demo.repository.*;
 import com.cinezone.demo.service.AdminCatalogService;
 import com.cinezone.demo.service.AuditService;
+import com.cinezone.demo.service.RedisStockService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +36,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
     private final ProductStockRepository productStockRepository;
     private final BookingRepository bookingRepository;
     private final TicketBasePriceRepository ticketBasePriceRepository;
+    private final RedisStockService redisStockService;
 
     private void validateOwnershipGuard(Long targetSedeId) {
         String correo = getCurrentUser();
@@ -274,6 +276,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             stock.setCinema(stockCinema);
             stock.setStock(request.stockGenerado());
             productStockRepository.save(stock);
+            redisStockService.syncStock(product.getId(), request.cinemaId(), request.stockGenerado());
         }
 
         auditService.logAction("Product", product.getId(), "CREATE", getCurrentUser(), "Producto creado: " + product.getNombre());
@@ -633,6 +636,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             int requiredAmount = recipe.getQuantity() * request.quantityToGenerate();
             ingredientStock.setStock(ingredientStock.getStock() - requiredAmount);
             productStockRepository.save(ingredientStock);
+            redisStockService.syncStock(ingredientStock.getProduct().getId(), cinema.getId(), ingredientStock.getStock());
         }
         
         ProductStock comboStock = productStockRepository.findByProductIdAndCinemaId(combo.getId(), cinema.getId())
@@ -647,6 +651,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 
         comboStock.setStock(comboStock.getStock() + request.quantityToGenerate());
         productStockRepository.save(comboStock);
+        redisStockService.syncStock(comboStock.getProduct().getId(), cinema.getId(), comboStock.getStock());
     }
 
     @Override
