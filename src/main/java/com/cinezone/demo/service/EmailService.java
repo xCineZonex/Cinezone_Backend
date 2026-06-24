@@ -26,12 +26,16 @@ public class EmailService {
     private final BookingSnackRepository bookingSnackRepository;
     private final QrGeneratorUtil qrGeneratorUtil;
 
+    @org.springframework.beans.factory.annotation.Value("${spring.mail.username}")
+    private String fromEmail;
+
     public void sendTicketEmail(Booking booking) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             String toEmail = booking.getUser() != null ? booking.getUser().getCorreo() : "noreply@cinezone.com";
+            helper.setFrom(fromEmail);
             helper.setTo(toEmail);
             helper.setSubject("¡Tu entrada para CineZone está lista! - " + booking.getCodigoUnico());
 
@@ -182,6 +186,7 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
+            helper.setFrom(fromEmail);
             helper.setTo(complaint.getEmail());
             helper.setSubject("Respuesta a su " + complaint.getTipoReclamo() + " - CineZone");
 
