@@ -10,6 +10,7 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByCorreo(String correo);
     Optional<User> findByDni(String dni);
+    Optional<User> findBySessionToken(String sessionToken);
     boolean existsByCorreo(String correo);
     boolean existsByDni(String dni);
     // Usuarios registrados en los últimos N días

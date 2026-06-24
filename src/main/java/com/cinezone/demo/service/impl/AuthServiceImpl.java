@@ -120,4 +120,34 @@ public class AuthServiceImpl implements AuthService { // Aquí aplicamos tu patr
         user.setContrasena(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
     }
+
+    @Override
+    public void forgotPassword(String email) {
+        User user = userRepository.findByCorreo(email)
+                .orElseThrow(() -> new BusinessRuleException("No existe una cuenta con ese correo."));
+        
+        String token = java.util.UUID.randomUUID().toString();
+        // Guardamos en redis o en el usuario directamente
+        user.setSessionToken("RESET_" + token); // Reusamos el sessionToken temporalmente o usamos Redis.
+        userRepository.save(user);
+        
+        try {
+            // Se llamará a emailService (debemos inyectarlo)
+            com.cinezone.demo.service.EmailService emailService = 
+                com.cinezone.demo.util.ApplicationContextHolder.getContext().getBean(com.cinezone.demo.service.EmailService.class);
+            emailService.sendPasswordResetEmail(user.getCorreo(), token, user.getNombre());
+        } catch (Exception e) {
+            System.err.println("No se pudo enviar el correo de recuperación: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        User user = userRepository.findBySessionToken("RESET_" + token)
+                .orElseThrow(() -> new BusinessRuleException("El enlace de recuperación es inválido o ha expirado."));
+        
+        user.setContrasena(passwordEncoder.encode(newPassword));
+        user.setSessionToken(java.util.UUID.randomUUID().toString()); // Invalida el token y desconecta sesiones activas
+        userRepository.save(user);
+    }
 }

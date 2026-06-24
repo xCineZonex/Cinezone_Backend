@@ -240,4 +240,57 @@ public class EmailService {
                 "</body>\n" +
                 "</html>";
     }
+    @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins:http://localhost:3000}")
+    private String frontendUrl;
+
+    public void sendPasswordResetEmail(String toEmail, String token, String name) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("Recuperación de Contraseña - CineZone");
+
+            // URL del frontend dinámico
+            String baseUrl = frontendUrl.contains(",") ? frontendUrl.split(",")[0] : frontendUrl;
+            String resetUrl = baseUrl + "/recuperar?token=" + token;
+
+            String htmlContent = "<!DOCTYPE html>\n" +
+                    "<html lang=\"es\">\n" +
+                    "<head>\n" +
+                    "  <meta charset=\"UTF-8\" />\n" +
+                    "  <style>\n" +
+                    "    body { font-family: Arial, sans-serif; background-color: #f4f4f5; color: #18181b; padding: 20px; }\n" +
+                    "    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }\n" +
+                    "    .header { background-color: #020617; padding: 20px; text-align: center; color: #ffffff; }\n" +
+                    "    .header h1 { margin: 0; font-size: 24px; font-weight: 900; }\n" +
+                    "    .header h1 span { color: #f59e0b; }\n" +
+                    "    .content { padding: 30px; line-height: 1.6; text-align: center; }\n" +
+                    "    .btn { display: inline-block; background-color: #f59e0b; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; margin-top: 20px; }\n" +
+                    "  </style>\n" +
+                    "</head>\n" +
+                    "<body>\n" +
+                    "  <div class=\"container\">\n" +
+                    "    <div class=\"header\">\n" +
+                    "      <h1>CINE<span>ZONE</span></h1>\n" +
+                    "    </div>\n" +
+                    "    <div class=\"content\">\n" +
+                    "      <h2>Hola, " + name + "</h2>\n" +
+                    "      <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>\n" +
+                    "      <p>Haz clic en el siguiente botón para crear una nueva contraseña:</p>\n" +
+                    "      <a href=\"" + resetUrl + "\" class=\"btn\">Restablecer Contraseña</a>\n" +
+                    "      <p style=\"margin-top: 20px; font-size: 12px; color: #777;\">Si no solicitaste este cambio, puedes ignorar este correo.</p>\n" +
+                    "    </div>\n" +
+                    "  </div>\n" +
+                    "</body>\n" +
+                    "</html>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            e.printStackTrace();
+            System.err.println("Error al enviar el correo de recuperación a: " + toEmail);
+        }
+    }
 }

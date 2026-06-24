@@ -13,4 +13,6 @@ public interface AuthService {
     // Autentica al usuario y devuelve el JWT
     AuthResponseDTO login(LoginRequestDTO request);
     void updatePassword(String email, PasswordUpdateDTO request);
+    void forgotPassword(String email);
+    void resetPassword(String token, String newPassword);
 }

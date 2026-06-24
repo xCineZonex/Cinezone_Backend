@@ -79,11 +79,21 @@ public class AuthController {
 
     @PostMapping("/password/forgot")
     public ResponseEntity<Void> forgotPassword(@RequestBody java.util.Map<String, String> request) {
-        return ResponseEntity.ok().build(); // TODO: Implementar lógica
+        String email = request.get("email");
+        if (email != null && !email.isBlank()) {
+            authService.forgotPassword(email);
+        }
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/password/reset")
     public ResponseEntity<Void> resetPassword(@RequestBody java.util.Map<String, String> request) {
-        return ResponseEntity.ok().build(); // TODO: Implementar lógica
+        String token = request.get("token");
+        String newPassword = request.get("newPassword");
+        
+        if (token != null && newPassword != null) {
+            authService.resetPassword(token, newPassword);
+        }
+        return ResponseEntity.ok().build();
     }
 }
