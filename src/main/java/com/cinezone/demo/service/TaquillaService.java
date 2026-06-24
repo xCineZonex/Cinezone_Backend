@@ -2,10 +2,13 @@ package com.cinezone.demo.service;
 
 import com.cinezone.demo.dto.ClientSearchResponseDTO;
 import com.cinezone.demo.dto.TemporalClientRequestDTO;
+import java.util.List;
 
 public interface TaquillaService {
     ClientSearchResponseDTO searchByDni(String dni);
     ClientSearchResponseDTO createTemporalClient(TemporalClientRequestDTO request);
+    void checkinTickets(String codigoUnico, List<Long> ticketIdsToMarkAsUsed, String observaciones);
+    java.math.BigDecimal previewDiferencia(String codigoUnico);
     void pagarDiferencia(String codigoUnico);
     com.cinezone.demo.model.entity.User resolveBuyerUser(com.cinezone.demo.model.entity.User currentUser, java.util.UUID clienteId);
 

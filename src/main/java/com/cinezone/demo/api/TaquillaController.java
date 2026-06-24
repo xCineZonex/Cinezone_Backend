@@ -30,6 +30,14 @@ public class TaquillaController {
         return ResponseEntity.ok(service.createTemporalClient(request));
     }
 
+    @GetMapping("/pagar-diferencia/{codigoUnico}")
+    public ResponseEntity<java.util.Map<String, Object>> previewDiferencia(@PathVariable String codigoUnico) {
+        java.math.BigDecimal diff = service.previewDiferencia(codigoUnico);
+        java.util.Map<String, Object> resp = new java.util.HashMap<>();
+        resp.put("diferencia", diff);
+        return ResponseEntity.ok(resp);
+    }
+
     @PostMapping("/pagar-diferencia/{codigoUnico}")
     public ResponseEntity<Void> pagarDiferencia(@PathVariable String codigoUnico) {
         service.pagarDiferencia(codigoUnico);

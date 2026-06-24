@@ -378,6 +378,25 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional
+    public void deleteShowtime(Long id) {
+        Showtime showtime = showtimeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Función no encontrada"));
+        validateOwnershipGuard(showtime.getCinema().getId());
+        
+        boolean hasBookings = bookingRepository.existsByShowtimeIdAndEstadoIn(
+                  showtime.getId(),
+                  java.util.List.of(com.cinezone.demo.model.enums.BookingStatus.VALIDA, 
+                                    com.cinezone.demo.model.enums.BookingStatus.USADA, 
+                                    com.cinezone.demo.model.enums.BookingStatus.PENDIENTE)
+          );
+        if (hasBookings) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("No se puede eliminar la función porque tiene reservas activas.");
+        }
+        
+        showtimeRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
     public Seat updateSeat(Long id, SeatUpdateDTO request) {
         Seat seat = seatRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Asiento no encontrado"));
         if (request.fila() != null) seat.setFila(request.fila());

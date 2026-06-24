@@ -9,6 +9,7 @@ public record UserProfileResponseDTO(
         String apellido,
         String correo,
         String dni,
+        String tipoDocumento,
         String celular,
         java.time.LocalDate fechaNacimiento,
         String genero,

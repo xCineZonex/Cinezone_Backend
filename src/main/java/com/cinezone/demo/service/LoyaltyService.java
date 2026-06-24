@@ -15,6 +15,7 @@ public class LoyaltyService {
 
     private final LoyaltyTierRepository tierRepository;
     private final UserRepository userRepository;
+    private final com.cinezone.demo.repository.TicketBenefitRepository ticketBenefitRepository;
 
     public void evaluateTierUpgrade(User user) {
         if (!user.getEsSocio()) return; 
@@ -37,5 +38,28 @@ public class LoyaltyService {
                 break; 
             }
         }
+    }
+
+    public List<com.cinezone.demo.model.entity.TicketBenefit> getAllBeneficios() {
+        return ticketBenefitRepository.findAll();
+    }
+    
+    public com.cinezone.demo.model.entity.TicketBenefit createBeneficio(com.cinezone.demo.model.entity.TicketBenefit b) {
+        return ticketBenefitRepository.save(b);
+    }
+    
+    public void updateBeneficio(Long id, com.cinezone.demo.model.entity.TicketBenefit b) {
+        com.cinezone.demo.model.entity.TicketBenefit existing = ticketBenefitRepository.findById(id).orElseThrow();
+        existing.setName(b.getName());
+        existing.setPrice(b.getPrice());
+        existing.setPointsRequired(b.getPointsRequired());
+        existing.setTicketCount(b.getTicketCount());
+        existing.setRequiredTier(b.getRequiredTier());
+        existing.setMonthlyLimit(b.getMonthlyLimit());
+        ticketBenefitRepository.save(existing);
+    }
+    
+    public void deleteBeneficio(Long id) {
+        ticketBenefitRepository.deleteById(id);
     }
 }

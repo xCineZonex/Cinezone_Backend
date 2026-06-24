@@ -244,7 +244,7 @@ public class UserServiceImpl implements UserService {
     private UserProfileResponseDTO mapToDTO(User user) {
         return new UserProfileResponseDTO(
                 user.getId(), user.getNombre(), user.getApellido(),
-                user.getCorreo(), user.getDni(), user.getCelular(),
+                user.getCorreo(), user.getDni(), user.getTipoDocumento(), user.getCelular(),
                 user.getFechaNacimiento(), user.getGenero(),
                 user.getPuntos(),
                 user.getTier() != null ? user.getTier().getName() : "Sin Nivel",

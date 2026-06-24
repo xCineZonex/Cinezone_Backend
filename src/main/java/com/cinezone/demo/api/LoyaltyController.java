@@ -19,22 +19,64 @@ public class LoyaltyController {
     }
 
     @GetMapping
-    public ResponseEntity<java.util.List<Object>> getAllBeneficios() {
-        return ResponseEntity.ok(java.util.List.of());
+    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getAllBeneficios() {
+        java.util.List<java.util.Map<String, Object>> response = service.getAllBeneficios().stream().map(b -> {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", b.getId());
+            map.put("name", b.getName());
+            map.put("price", b.getPrice());
+            map.put("pointsRequired", b.getPointsRequired());
+            map.put("ticketCount", b.getTicketCount());
+            map.put("tierId", b.getRequiredTier().getId());
+            map.put("tierName", b.getRequiredTier().getName());
+            map.put("monthlyLimit", b.getMonthlyLimit());
+            return map;
+        }).toList();
+        return ResponseEntity.ok(response);
+    }
+
+    public static class BeneficioDTO {
+        public String name;
+        public java.math.BigDecimal price;
+        public Integer pointsRequired;
+        public Integer ticketCount;
+        public Long tierId;
+        public Integer monthlyLimit;
     }
 
     @PostMapping
-    public ResponseEntity<Void> createBeneficio(@RequestBody Object beneficio) {
+    public ResponseEntity<Void> createBeneficio(@RequestBody BeneficioDTO request) {
+        com.cinezone.demo.model.entity.TicketBenefit b = new com.cinezone.demo.model.entity.TicketBenefit();
+        b.setName(request.name);
+        b.setPrice(request.price);
+        b.setPointsRequired(request.pointsRequired);
+        b.setTicketCount(request.ticketCount);
+        com.cinezone.demo.model.entity.LoyaltyTier tier = new com.cinezone.demo.model.entity.LoyaltyTier();
+        tier.setId(request.tierId);
+        b.setRequiredTier(tier);
+        b.setMonthlyLimit(request.monthlyLimit);
+        service.createBeneficio(b);
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).build();
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Void> updateBeneficio(@PathVariable Long id, @RequestBody Object beneficio) {
+    public ResponseEntity<Void> updateBeneficio(@PathVariable Long id, @RequestBody BeneficioDTO request) {
+        com.cinezone.demo.model.entity.TicketBenefit b = new com.cinezone.demo.model.entity.TicketBenefit();
+        b.setName(request.name);
+        b.setPrice(request.price);
+        b.setPointsRequired(request.pointsRequired);
+        b.setTicketCount(request.ticketCount);
+        com.cinezone.demo.model.entity.LoyaltyTier tier = new com.cinezone.demo.model.entity.LoyaltyTier();
+        tier.setId(request.tierId);
+        b.setRequiredTier(tier);
+        b.setMonthlyLimit(request.monthlyLimit);
+        service.updateBeneficio(id, b);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBeneficio(@PathVariable Long id) {
+        service.deleteBeneficio(id);
         return ResponseEntity.ok().build();
     }
 }

@@ -20,6 +20,7 @@ public interface AdminCatalogService {
     Cinema updateCinema(Long id, CinemaUpdateDTO request);
     Auditorium updateAuditorium(Long id, AuditoriumUpdateDTO request);
     Showtime updateShowtime(Long id, ShowtimeUpdateDTO request);
+    void deleteShowtime(Long id);
     Seat updateSeat(Long id, SeatUpdateDTO request);
     Seat toggleSeatMaintenance(Long id, boolean estado);
     Product updateProduct(Long id, ProductUpdateDTO request);

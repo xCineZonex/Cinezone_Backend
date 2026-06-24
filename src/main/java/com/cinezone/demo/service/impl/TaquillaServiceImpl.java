@@ -103,6 +103,53 @@ public class TaquillaServiceImpl implements TaquillaService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public BigDecimal previewDiferencia(String codigoUnico) {
+        List<Booking> bookings = bookingRepository.findByCodigoUnicoPrefix(codigoUnico.toLowerCase());
+        if (bookings == null || bookings.isEmpty()) {
+            throw new ResourceNotFoundException("Boleta no encontrada");
+        }
+        if (bookings.size() > 1) {
+            throw new BusinessRuleException("Código ambiguo. Ingrese más caracteres.");
+        }
+        Booking booking = bookings.get(0);
+
+        List<Ticket> tickets = ticketRepository.findByBookingId(booking.getId());
+        if (tickets == null || tickets.isEmpty()) {
+            throw new BusinessRuleException("La boleta no tiene entradas.");
+        }
+
+        BigDecimal differenceTotal = BigDecimal.ZERO;
+        List<java.util.Map<String, Object>> prices = bookingService.getTicketTypes(booking.getShowtime().getId());
+        BigDecimal normalPrice = BigDecimal.ZERO;
+        for (java.util.Map<String, Object> p : prices) {
+            if ("NORMAL".equals(p.get("tipo"))) {
+                normalPrice = (BigDecimal) p.get("precio");
+                break;
+            }
+        }
+
+        boolean hasDiscount = false;
+        for (Ticket t : tickets) {
+            if (t.getTipoEntrada() == TicketType.DISCAPACIDAD || 
+                t.getTipoEntrada() == TicketType.TERCERA_EDAD || 
+                t.getTipoEntrada() == TicketType.NINO) {
+                hasDiscount = true;
+                BigDecimal diff = normalPrice.subtract(t.getPrecioPagado());
+                if (diff.compareTo(BigDecimal.ZERO) > 0) {
+                    differenceTotal = differenceTotal.add(diff);
+                }
+            }
+        }
+
+        if (!hasDiscount) {
+            throw new BusinessRuleException("Esta boleta no tiene entradas con descuento que requieran pagar diferencia.");
+        }
+        
+        return differenceTotal;
+    }
+
+    @Override
     @Transactional
     public void pagarDiferencia(String codigoUnico) {
         List<Booking> bookings = bookingRepository.findByCodigoUnicoPrefix(codigoUnico.toLowerCase());

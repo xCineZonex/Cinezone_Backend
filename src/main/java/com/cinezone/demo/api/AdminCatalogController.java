@@ -35,8 +35,15 @@ public class AdminCatalogController {
     }
 
     @PostMapping("/productos")
-    public ResponseEntity<Product> createProduct(@RequestBody ProductCreateDTO request) {
-        return ResponseEntity.ok(catalogService.createProduct(request));
+    public ResponseEntity<ProductDTO> createProduct(@RequestBody ProductCreateDTO request) {
+        Product p = catalogService.createProduct(request);
+        ProductDTO dto = new ProductDTO(
+            p.getId(), p.getNombre(), p.getDescripcion(), p.getPrecio(),
+            p.getPrecioPuntos(), p.getCategoria(), p.getDisponible(),
+            p.getImagen(), p.getRequiredTier() != null ? p.getRequiredTier().getId() : null,
+            p.getEsInsumo(), p.getCinema() != null ? p.getCinema().getId() : null
+        );
+        return ResponseEntity.ok(dto);
     }
 
     @PutMapping("/productos/{id}")
@@ -105,6 +112,12 @@ public class AdminCatalogController {
     @PutMapping("/funciones/{id}")
     public ResponseEntity<Showtime> updateShowtime(@PathVariable Long id, @RequestBody ShowtimeUpdateDTO request) {
         return ResponseEntity.ok(catalogService.updateShowtime(id, request));
+    }
+
+    @DeleteMapping("/funciones/{id}")
+    public ResponseEntity<Void> deleteShowtime(@PathVariable Long id) {
+        catalogService.deleteShowtime(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/peliculas")
