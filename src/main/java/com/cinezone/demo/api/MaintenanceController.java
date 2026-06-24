@@ -19,21 +19,21 @@ public class MaintenanceController {
     private final MaintenanceService maintenanceService;
 
     @PostMapping("/report")
-    @PreAuthorize("hasAnyRole('JEFE_SALA', 'ADMIN_SEDE')")
+    @PreAuthorize("hasAnyRole('JEFE_SALA', 'ADMIN_SEDE', 'SUPER_ADMIN')")
     public ResponseEntity<TicketResponse> reportIssue(@RequestBody ReportTicketRequest request) {
         MaintenanceTicket ticket = maintenanceService.reportIssue(request);
         return ResponseEntity.ok(mapToResponse(ticket));
     }
 
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN_SEDE')")
+    @PreAuthorize("hasAnyRole('ADMIN_SEDE', 'SUPER_ADMIN')")
     public ResponseEntity<TicketResponse> updateStatus(@PathVariable Long id, @RequestBody UpdateTicketStatusRequest request) {
         MaintenanceTicket ticket = maintenanceService.updateTicketStatus(id, request);
         return ResponseEntity.ok(mapToResponse(ticket));
     }
 
     @GetMapping("/sede/{sedeId}")
-    @PreAuthorize("hasAnyRole('JEFE_SALA', 'ADMIN_SEDE')")
+    @PreAuthorize("hasAnyRole('JEFE_SALA', 'ADMIN_SEDE', 'SUPER_ADMIN')")
     public ResponseEntity<List<TicketResponse>> getTicketsBySede(@PathVariable Long sedeId) {
         List<MaintenanceTicket> tickets = maintenanceService.getTicketsBySede(sedeId);
         return ResponseEntity.ok(tickets.stream().map(this::mapToResponse).collect(Collectors.toList()));
