@@ -28,6 +28,7 @@ public class AuthServiceImpl implements AuthService { // Aquí aplicamos tu patr
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final com.cinezone.demo.service.EmailService emailService;
 
     @Override
     @Transactional
@@ -132,9 +133,7 @@ public class AuthServiceImpl implements AuthService { // Aquí aplicamos tu patr
         userRepository.save(user);
         
         try {
-            // Se llamará a emailService (debemos inyectarlo)
-            com.cinezone.demo.service.EmailService emailService = 
-                com.cinezone.demo.util.ApplicationContextHolder.getContext().getBean(com.cinezone.demo.service.EmailService.class);
+            // Se llamará a emailService
             emailService.sendPasswordResetEmail(user.getCorreo(), token, user.getNombre());
         } catch (Exception e) {
             System.err.println("No se pudo enviar el correo de recuperación: " + e.getMessage());
