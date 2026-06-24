@@ -40,8 +40,8 @@ public class AdminCatalogController {
         ProductDTO dto = new ProductDTO(
             p.getId(), p.getNombre(), p.getDescripcion(), p.getPrecio(),
             p.getPrecioPuntos(), p.getCategoria(), p.getDisponible(),
-            p.getImagen(), p.getRequiredTier() != null ? p.getRequiredTier().getId() : null,
-            p.getEsInsumo(), p.getCinema() != null ? p.getCinema().getId() : null
+            p.getEsInsumo(), p.getImagen(),
+            p.getRequiredTier() != null ? p.getRequiredTier().getId() : null
         );
         return ResponseEntity.ok(dto);
     }
