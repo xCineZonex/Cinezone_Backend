@@ -333,22 +333,25 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         Showtime showtime = showtimeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Función no encontrada"));
         
         validateOwnershipGuard(showtime.getCinema().getId());
+        if (showtime.getFechaHora().isBefore(LocalDateTime.now())) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("No se puede editar una función que ya ha finalizado.");
+        }
+
+        boolean hasBookings = bookingRepository.existsByShowtimeIdAndEstadoIn(
+                showtime.getId(),
+                java.util.List.of(com.cinezone.demo.model.enums.BookingStatus.VALIDA, 
+                                  com.cinezone.demo.model.enums.BookingStatus.USADA, 
+                                  com.cinezone.demo.model.enums.BookingStatus.PENDIENTE)
+        );
+
+        if (hasBookings) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("No se puede editar o desactivar esta función porque ya tiene asientos comprados o reservados.");
+        }
+
         if (request.fechaHora() != null) showtime.setFechaHora(request.fechaHora());
         if (request.idioma() != null) showtime.setIdioma(request.idioma());
         if (request.formatoProyeccion() != null) showtime.setFormatoProyeccion(request.formatoProyeccion());
         if (request.activa() != null) {
-            // Si intenta desactivar la función, verificar que no tenga tickets vendidos
-            if (!request.activa() && showtime.getActiva()) {
-                boolean hasBookings = bookingRepository.existsByShowtimeIdAndEstadoIn(
-                        showtime.getId(),
-                        java.util.List.of(com.cinezone.demo.model.enums.BookingStatus.VALIDA, 
-                                          com.cinezone.demo.model.enums.BookingStatus.USADA, 
-                                          com.cinezone.demo.model.enums.BookingStatus.PENDIENTE)
-                );
-                if (hasBookings) {
-                    throw new com.cinezone.demo.exception.BusinessRuleException("No se puede eliminar/desactivar esta función porque ya tiene asientos comprados o reservados.");
-                }
-            }
             showtime.setActiva(request.activa());
         }
         
