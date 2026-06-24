@@ -39,6 +39,7 @@ public class BookingServiceImpl implements BookingService {
     private final com.cinezone.demo.service.RedisStockService redisStockService;
     private final TicketBasePriceRepository ticketBasePriceRepository;
     private final TicketTypeSedePriceRepository ticketTypeSedePriceRepository;
+    private final com.cinezone.demo.service.EmailService emailService;
 
     // Métodos delegados para cálculo dinámico
 
@@ -451,6 +452,13 @@ public class BookingServiceImpl implements BookingService {
                     .descripcion(hasTickets ? "Compra de entradas/snacks" : "Compra solo dulcería")
                     .booking(booking)
                     .build());
+        }
+
+        // Enviar correo de boleta
+        try {
+            emailService.sendTicketEmail(booking);
+        } catch (Exception e) {
+            System.err.println("No se pudo enviar el correo de boleta: " + e.getMessage());
         }
     }
 
