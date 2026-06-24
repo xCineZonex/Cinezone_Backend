@@ -315,8 +315,12 @@ public class BookingServiceImpl implements BookingService {
     private BigDecimal calculateTicketPrice(Showtime showtime, com.cinezone.demo.model.enums.TicketType ticketType) {
         BigDecimal basePrice = new BigDecimal("25.00"); // default
         Long sedeId = (showtime != null && showtime.getCinema() != null) ? showtime.getCinema().getId() : null;
+        String formato = showtime != null && showtime.getFormatoProyeccion() != null ? showtime.getFormatoProyeccion().name() : "FORMAT_2D";
         
-        TicketBasePrice base = ticketBasePriceRepository.findByTicketType(ticketType).orElse(null);
+        TicketBasePrice base = ticketBasePriceRepository.findByTicketTypeAndFormato(ticketType, formato)
+                                 .orElseGet(() -> ticketBasePriceRepository.findByTicketTypeAndFormato(ticketType, "2D")
+                                 .orElseGet(() -> ticketBasePriceRepository.findFirstByTicketType(ticketType).orElse(null)));
+                                 
         if (base != null) {
             basePrice = base.getBasePrice();
             if (sedeId != null) {

@@ -6,7 +6,9 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "ticket_base_prices")
+@Table(name = "ticket_base_prices_v2", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"ticket_type", "formato"})
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class TicketBasePrice {
 
@@ -15,8 +17,12 @@ public class TicketBasePrice {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "ticket_type", nullable = false, unique = true, length = 20)
+    @Column(name = "ticket_type", nullable = false, length = 20)
     private TicketType ticketType;
+
+    @Column(name = "formato", length = 50)
+    @Builder.Default
+    private String formato = "2D";
 
     @Column(nullable = false, length = 100)
     private String name;

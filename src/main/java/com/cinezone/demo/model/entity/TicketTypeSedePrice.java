@@ -5,7 +5,7 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "ticket_type_sede_prices", uniqueConstraints = {
+@Table(name = "ticket_type_sede_prices_v2", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"sede_id", "ticket_base_price_id"})
 })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
