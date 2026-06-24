@@ -10,6 +10,7 @@ public class GatekeeperDTOs {
             UUID codigoUnico,
             String movieTitle,
             String auditoriumName,
+            String tipoSala,
             String showtimeDate,
             String bookingStatus,
             String observaciones,

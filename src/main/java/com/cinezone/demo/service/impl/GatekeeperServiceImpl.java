@@ -146,6 +146,7 @@ public class GatekeeperServiceImpl implements GatekeeperService {
                 booking.getCodigoUnico(),
                 booking.getShowtime() != null && booking.getShowtime().getMovie() != null ? booking.getShowtime().getMovie().getTitulo() : "",
                 booking.getShowtime() != null && booking.getShowtime().getAuditorium() != null ? booking.getShowtime().getAuditorium().getNombre() : "",
+                booking.getShowtime() != null && booking.getShowtime().getAuditorium() != null ? booking.getShowtime().getAuditorium().getTipo() : "REGULAR",
                 dateStr,
                 booking.getEstado().name(),
                 booking.getObservaciones(),

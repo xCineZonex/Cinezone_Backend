@@ -23,6 +23,10 @@ public class Auditorium {
     @Column(name = "capacidad_total", nullable = false)
     private Integer capacidadTotal;
 
+    @Column(name = "tipo", length = 30)
+    @Builder.Default
+    private String tipo = "REGULAR";
+
     @Builder.Default
     private Boolean activa = true;
 
@@ -63,5 +67,13 @@ public class Auditorium {
 
     public void setCapacidadTotal(Integer capacidadTotal) {
         this.capacidadTotal = capacidadTotal;
+    }
+
+    public String getTipo() {
+        return this.tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
     }
 }

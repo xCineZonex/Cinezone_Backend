@@ -113,6 +113,7 @@ public class AdminCatalogDTOs {
     public record AuditoriumLayoutDTO(
             String nombre,
             Long cinemaId,
+            String tipo,
             int gridRows,
             int gridCols,
             java.util.List<SeatLayoutItemDTO> asientos

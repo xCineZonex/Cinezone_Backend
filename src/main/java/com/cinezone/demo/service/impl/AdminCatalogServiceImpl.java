@@ -445,6 +445,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         Auditorium auditorium = Auditorium.builder()
                 .nombre(request.nombre())
                 .cinema(cinema)
+                .tipo(request.tipo() != null && !request.tipo().isBlank() ? request.tipo() : "FORMAT_2D")
                 .capacidadTotal(request.asientos().size())
                 .activa(true)
                 .build();
@@ -482,9 +483,12 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
         validateOwnershipGuard(auditorium.getCinema().getId());
 
-        // Actualizar nombre si vino en el request
+        // Actualizar nombre y tipo si vinieron en el request
         if (request.nombre() != null && !request.nombre().isBlank()) {
             auditorium.setNombre(request.nombre());
+        }
+        if (request.tipo() != null && !request.tipo().isBlank()) {
+            auditorium.setTipo(request.tipo());
         }
 
         // Borrar todos los asientos actuales y reemplazarlos con el nuevo diseño
