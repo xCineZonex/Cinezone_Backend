@@ -116,8 +116,10 @@ public class UserController {
     }
 
     @PatchMapping("/me")
-    public ResponseEntity<Void> updateProfile(@RequestBody java.util.Map<String, Object> updates) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<UserProfileResponseDTO> updateProfile(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User user,
+            @RequestBody com.cinezone.demo.dto.UserUpdateDTO updates) {
+        return ResponseEntity.ok(userService.updateProfile(user.getCorreo(), updates));
     }
 
     @PostMapping("/me/module")
