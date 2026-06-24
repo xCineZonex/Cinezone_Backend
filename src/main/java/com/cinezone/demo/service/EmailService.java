@@ -254,7 +254,7 @@ public class EmailService {
 
             // URL del frontend dinámico
             String baseUrl = frontendUrl.contains(",") ? frontendUrl.split(",")[0] : frontendUrl;
-            String resetUrl = baseUrl + "/recuperar?token=" + token;
+            String resetUrl = baseUrl + "/reset-password?token=" + token;
 
             String htmlContent = "<!DOCTYPE html>\n" +
                     "<html lang=\"es\">\n" +
