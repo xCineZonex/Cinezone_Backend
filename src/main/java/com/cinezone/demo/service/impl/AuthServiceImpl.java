@@ -84,6 +84,7 @@ public class AuthServiceImpl implements AuthService { // Aquí aplicamos tu patr
         userToSave.setRol(Role.CLIENT);
         userToSave.setTier(baseTier);
         userToSave.setEsSocio(true);
+        userToSave.setSessionToken(java.util.UUID.randomUUID().toString());
 
         userRepository.save(userToSave);
 
@@ -99,6 +100,9 @@ public class AuthServiceImpl implements AuthService { // Aquí aplicamos tu patr
 
         User user = userRepository.findByCorreo(request.correo())
                 .orElseThrow();
+                
+        user.setSessionToken(java.util.UUID.randomUUID().toString());
+        userRepository.save(user);
 
         String token = jwtService.generateToken(user);
         return new AuthResponseDTO(token, "Login exitoso", user.getRol().name());

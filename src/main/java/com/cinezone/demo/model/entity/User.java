@@ -84,6 +84,9 @@ public class User implements UserDetails {
     @Builder.Default
     private Boolean activo = true;
 
+    @Column(name = "session_token")
+    private String sessionToken;
+
     // =========================================================
     // Relación con la nueva tabla de niveles (Por defecto será el Azul)
     @ManyToOne(fetch = FetchType.LAZY)
@@ -297,4 +300,7 @@ public class User implements UserDetails {
 
     public Set<Cinema> getSedes() { return this.sedes; }
     public void setSedes(Set<Cinema> sedes) { this.sedes = sedes; }
+
+    public String getSessionToken() { return this.sessionToken; }
+    public void setSessionToken(String sessionToken) { this.sessionToken = sessionToken; }
 }

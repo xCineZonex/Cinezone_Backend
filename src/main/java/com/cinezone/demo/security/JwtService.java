@@ -37,6 +37,9 @@ public class JwtService {
         // Guardamos el rol y el ID dentro del token para no tener que consultar la BD a cada rato
         extraClaims.put("rol", user.getRol().name());
         extraClaims.put("userId", user.getId().toString());
+        if (user.getSessionToken() != null) {
+            extraClaims.put("sessionToken", user.getSessionToken());
+        }
 
         return Jwts.builder()
                 .setClaims(extraClaims)

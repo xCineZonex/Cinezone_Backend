@@ -130,6 +130,9 @@ public class UserServiceImpl implements UserService {
                 if (!ownsAll) {
                     throw new AccessDeniedException("No puedes asignar una sede que no te pertenece");
                 }
+                if (sedesToAssign.size() > 1) {
+                    throw new BusinessRuleException("Un Administrador de Sede o Jefe de Sala solo puede asignar 1 sede por usuario.");
+                }
             }
         } else if (currentUser.getRol() != Role.SUPER_ADMIN) {
             throw new AccessDeniedException("Debes asignar al menos una de tus sedes al nuevo usuario");
@@ -331,6 +334,9 @@ public class UserServiceImpl implements UserService {
                  boolean ownsAll = currentUser.getSedes().containsAll(sedesToAssign);
                  if (!ownsAll) {
                      throw new AccessDeniedException("No puedes asignar una sede que no te pertenece");
+                 }
+                 if (sedesToAssign.size() > 1) {
+                     throw new BusinessRuleException("Un Administrador de Sede o Jefe de Sala solo puede asignar 1 sede por usuario.");
                  }
              }
              targetUser.setSedes(sedesToAssign);
