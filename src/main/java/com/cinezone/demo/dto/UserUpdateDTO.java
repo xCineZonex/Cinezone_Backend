@@ -8,6 +8,7 @@ public record UserUpdateDTO(
         String celular,
         String correo,
         String contrasena, // Opcional, solo si quiere cambiarla
+        String tipoDocumento,
         String dni,
         LocalDate fechaNacimiento,
         String genero

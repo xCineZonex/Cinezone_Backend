@@ -13,6 +13,7 @@ public record StaffRegisterRequestDTO(
         @NotBlank String apellido,
         @Email @NotBlank String correo,
         @NotBlank @Size(min = 6) String contrasena,
+        String tipoDocumento,
         @NotBlank @Size(min = 8, max = 15) String dni,
         @NotBlank @Size(min = 9, max = 15) String celular,
         @NotNull Role rol,

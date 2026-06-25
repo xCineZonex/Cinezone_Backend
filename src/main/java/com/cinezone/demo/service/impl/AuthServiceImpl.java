@@ -41,6 +41,10 @@ public class AuthServiceImpl implements AuthService { // Aquí aplicamos tu patr
             if (request.dni().length() < 6 || request.dni().length() > 15) {
                 throw new BusinessRuleException("El pasaporte debe tener entre 6 y 15 caracteres.");
             }
+        } else if ("CE".equalsIgnoreCase(request.tipoDocumento()) || "CARNET DE EXTRANJERIA".equalsIgnoreCase(request.tipoDocumento())) {
+            if (request.dni().length() < 6 || request.dni().length() > 15) {
+                throw new BusinessRuleException("El Carnet de Extranjería debe tener entre 6 y 15 caracteres.");
+            }
         } else {
             throw new BusinessRuleException("Tipo de documento inválido.");
         }

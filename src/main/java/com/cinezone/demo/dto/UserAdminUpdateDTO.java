@@ -12,6 +12,7 @@ public record UserAdminUpdateDTO(
         @NotBlank String nombre,
         @NotBlank String apellido,
         @Email @NotBlank String correo,
+        String tipoDocumento,
         @NotBlank @Size(min = 8, max = 15) String dni,
         @NotBlank @Size(min = 9, max = 15) String celular,
         @NotNull Role rol,

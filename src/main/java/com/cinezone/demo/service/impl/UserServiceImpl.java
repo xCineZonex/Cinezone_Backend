@@ -71,6 +71,19 @@ public class UserServiceImpl implements UserService {
         throw new AccessDeniedException("No tienes permisos suficientes");
     }
 
+    private void validateDocument(String tipoDoc, String numDoc) {
+        if (tipoDoc == null) return;
+        if ("DNI".equalsIgnoreCase(tipoDoc)) {
+            if (!numDoc.matches("\\d{8}")) throw new BusinessRuleException("El DNI debe tener exactamente 8 dígitos.");
+        } else if ("PASAPORTE".equalsIgnoreCase(tipoDoc)) {
+            if (numDoc.length() < 6 || numDoc.length() > 15) throw new BusinessRuleException("El pasaporte debe tener entre 6 y 15 caracteres.");
+        } else if ("CE".equalsIgnoreCase(tipoDoc) || "CARNET DE EXTRANJERIA".equalsIgnoreCase(tipoDoc)) {
+            if (numDoc.length() < 6 || numDoc.length() > 15) throw new BusinessRuleException("El Carnet de Extranjería debe tener entre 6 y 15 caracteres.");
+        } else {
+            throw new BusinessRuleException("Tipo de documento inválido.");
+        }
+    }
+
     private boolean canViewUser(User currentUser, User targetUser) {
         if (currentUser.getRol() == Role.SUPER_ADMIN) return true;
         if (currentUser.getRol() == Role.ADMIN_SEDE) {
@@ -138,10 +151,14 @@ public class UserServiceImpl implements UserService {
             throw new AccessDeniedException("Debes asignar al menos una de tus sedes al nuevo usuario");
         }
 
+        String tipoDoc = request.tipoDocumento() != null ? request.tipoDocumento() : "DNI";
+        validateDocument(tipoDoc, request.dni());
+
         User staff = new User();
         staff.setNombre(request.nombre());
         staff.setApellido(request.apellido());
         staff.setCorreo(request.correo());
+        staff.setTipoDocumento(tipoDoc);
         staff.setDni(request.dni());
         staff.setCelular(request.celular());
         staff.setContrasena(passwordEncoder.encode(request.contrasena()));
@@ -219,7 +236,13 @@ public class UserServiceImpl implements UserService {
             if (userRepository.existsByDni(request.dni())) {
                 throw new BusinessRuleException("Error: El nuevo DNI ya está registrado.");
             }
+            String tipoDoc = request.tipoDocumento() != null ? request.tipoDocumento() : user.getTipoDocumento();
+            validateDocument(tipoDoc, request.dni());
+            user.setTipoDocumento(tipoDoc);
             user.setDni(request.dni());
+        } else if (request.tipoDocumento() != null && !request.tipoDocumento().equals(user.getTipoDocumento())) {
+            validateDocument(request.tipoDocumento(), user.getDni());
+            user.setTipoDocumento(request.tipoDocumento());
         }
 
         if (request.nombre() != null) user.setNombre(request.nombre());
@@ -342,9 +365,13 @@ public class UserServiceImpl implements UserService {
              targetUser.setSedes(sedesToAssign);
         }
 
+        String tipoDoc = request.tipoDocumento() != null ? request.tipoDocumento() : (targetUser.getTipoDocumento() != null ? targetUser.getTipoDocumento() : "DNI");
+        validateDocument(tipoDoc, request.dni());
+
         targetUser.setNombre(request.nombre());
         targetUser.setApellido(request.apellido());
         targetUser.setCorreo(request.correo());
+        targetUser.setTipoDocumento(tipoDoc);
         targetUser.setDni(request.dni());
         targetUser.setCelular(request.celular());
         targetUser.setRol(request.rol());
