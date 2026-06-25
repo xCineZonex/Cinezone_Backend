@@ -322,7 +322,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         
         validateOwnershipGuard(auditorium.getCinema().getId());
         if (request.nombre() != null && !request.nombre().equals(auditorium.getNombre())) {
-            List<Showtime> activeShowtimes = showtimeRepository.findByAuditoriumIdAndActivaTrue(id);
+            java.util.List<Showtime> activeShowtimes = showtimeRepository.findByAuditoriumIdAndActivaTrue(id);
             if (!activeShowtimes.isEmpty()) {
                 throw new com.cinezone.demo.exception.BusinessRuleException("No se puede editar el nombre de la sala porque tiene funciones programadas o activas.");
             }
@@ -491,7 +491,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
         // Actualizar nombre y tipo si vinieron en el request
         if (request.nombre() != null && !request.nombre().isBlank() && !request.nombre().equals(auditorium.getNombre())) {
-            List<Showtime> activeShowtimes = showtimeRepository.findByAuditoriumIdAndActivaTrue(auditoriumId);
+            java.util.List<Showtime> activeShowtimes = showtimeRepository.findByAuditoriumIdAndActivaTrue(auditoriumId);
             if (!activeShowtimes.isEmpty()) {
                 throw new com.cinezone.demo.exception.BusinessRuleException("No se puede editar el nombre de la sala porque tiene funciones programadas o activas.");
             }
