@@ -93,6 +93,10 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
         validateOwnershipGuard(cinema.getId());
 
+        if (auditoriumRepository.existsByCinemaIdAndNameIgnoreCase(cinema.getId(), request.nombre())) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("Ya existe una sala con el nombre '" + request.nombre() + "' en esta sede.");
+        }
+
         // CORRECCIÓN 1: Usamos capacidadTotal() y quitamos el tipo() porque tu entidad no lo tiene
         Auditorium auditorium = Auditorium.builder()
                 .nombre(request.nombre())
@@ -322,6 +326,9 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         
         validateOwnershipGuard(auditorium.getCinema().getId());
         if (request.nombre() != null && !request.nombre().equals(auditorium.getNombre())) {
+            if (auditoriumRepository.existsByCinemaIdAndNameIgnoreCase(auditorium.getCinema().getId(), request.nombre())) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("Ya existe una sala con el nombre '" + request.nombre() + "' en esta sede.");
+            }
             java.util.List<Showtime> activeShowtimes = showtimeRepository.findByAuditoriumIdAndActivaTrue(id);
             if (!activeShowtimes.isEmpty()) {
                 throw new com.cinezone.demo.exception.BusinessRuleException("No se puede editar el nombre de la sala porque tiene funciones programadas o activas.");
@@ -447,6 +454,10 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
         validateOwnershipGuard(cinema.getId());
 
+        if (auditoriumRepository.existsByCinemaIdAndNameIgnoreCase(cinema.getId(), request.nombre())) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("Ya existe una sala con el nombre '" + request.nombre() + "' en esta sede.");
+        }
+
         // Crear la sala (siempre nueva desde el editor)
         Auditorium auditorium = Auditorium.builder()
                 .nombre(request.nombre())
@@ -491,6 +502,9 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
         // Actualizar nombre y tipo si vinieron en el request
         if (request.nombre() != null && !request.nombre().isBlank() && !request.nombre().equals(auditorium.getNombre())) {
+            if (auditoriumRepository.existsByCinemaIdAndNameIgnoreCase(auditorium.getCinema().getId(), request.nombre())) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("Ya existe una sala con el nombre '" + request.nombre() + "' en esta sede.");
+            }
             java.util.List<Showtime> activeShowtimes = showtimeRepository.findByAuditoriumIdAndActivaTrue(auditoriumId);
             if (!activeShowtimes.isEmpty()) {
                 throw new com.cinezone.demo.exception.BusinessRuleException("No se puede editar el nombre de la sala porque tiene funciones programadas o activas.");
