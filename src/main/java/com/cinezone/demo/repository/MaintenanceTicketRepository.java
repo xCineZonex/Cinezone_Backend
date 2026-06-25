@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface MaintenanceTicketRepository extends JpaRepository<MaintenanceTicket, Long> {
     List<MaintenanceTicket> findBySedeId(Long sedeId);
     Optional<MaintenanceTicket> findBySupportId(String supportId);
+    List<MaintenanceTicket> findBySedeIdIn(java.util.Collection<Long> sedeIds);
 }

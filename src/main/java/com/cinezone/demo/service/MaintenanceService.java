@@ -11,5 +11,5 @@ public interface MaintenanceService {
     MaintenanceTicket getTicketBySupportId(String supportId);
     void submitTechnicianProposal(String supportId, TechnicianProposalRequest request);
     List<MaintenanceTicket> getTicketsBySede(Long sedeId);
-    List<MaintenanceTicket> getAllTickets();
+    List<MaintenanceTicket> getAllTickets(com.cinezone.demo.model.entity.User currentUser);
 }

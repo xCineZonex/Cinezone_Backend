@@ -39,6 +39,13 @@ public class MaintenanceController {
         return ResponseEntity.ok(tickets.stream().map(this::mapToResponse).collect(Collectors.toList()));
     }
 
+    @GetMapping
+    @PreAuthorize("hasAnyRole('JEFE_SALA', 'ADMIN_SEDE', 'SUPER_ADMIN')")
+    public ResponseEntity<List<TicketResponse>> getAllTickets(@org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User currentUser) {
+        List<MaintenanceTicket> tickets = maintenanceService.getAllTickets(currentUser);
+        return ResponseEntity.ok(tickets.stream().map(this::mapToResponse).collect(Collectors.toList()));
+    }
+
     // Public endpoints for Technician
     @GetMapping("/support/{supportId}")
     public ResponseEntity<TicketResponse> getTicketBySupportId(@PathVariable String supportId) {

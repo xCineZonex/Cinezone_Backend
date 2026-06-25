@@ -23,8 +23,10 @@ public class AdminBudgetController {
     // Obtener todos los presupuestos (Super Admin puede ver todos, Admin Sede podría filtrar por su sede)
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN_SEDE')")
-    public ResponseEntity<List<BudgetRequest>> getBudgetRequests(@RequestParam(required = false) Long sedeId) {
-        return ResponseEntity.ok(budgetService.getBudgetRequests(sedeId));
+    public ResponseEntity<List<BudgetRequest>> getBudgetRequests(
+            @RequestParam(required = false) Long sedeId,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(budgetService.getBudgetRequests(sedeId, currentUser));
     }
 
     // Crear una solicitud de presupuesto (Admin Sede)

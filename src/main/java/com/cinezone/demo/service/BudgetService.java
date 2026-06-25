@@ -35,10 +35,23 @@ public class BudgetService {
     }
 
     @Transactional(readOnly = true)
-    public List<BudgetRequest> getBudgetRequests(Long sedeId) {
+    public List<BudgetRequest> getBudgetRequests(Long sedeId, User currentUser) {
         if (sedeId != null) {
+            if (currentUser.getRol() == com.cinezone.demo.model.enums.Role.ADMIN_SEDE) {
+                boolean ownsSede = currentUser.getSedes().stream().anyMatch(s -> s.getId().equals(sedeId));
+                if (!ownsSede) {
+                    throw new RuntimeException("No tiene permisos para ver presupuestos de esta sede");
+                }
+            }
             return budgetRepository.findBySedeIdOrderByCreatedAtDesc(sedeId);
         }
+        
+        if (currentUser.getRol() == com.cinezone.demo.model.enums.Role.ADMIN_SEDE) {
+            List<Long> assignedSedeIds = currentUser.getSedes().stream().map(com.cinezone.demo.model.entity.Cinema::getId).toList();
+            if (assignedSedeIds.isEmpty()) return List.of();
+            return budgetRepository.findBySedeIdInOrderByCreatedAtDesc(assignedSedeIds);
+        }
+        
         return budgetRepository.findAllByOrderByCreatedAtDesc();
     }
 

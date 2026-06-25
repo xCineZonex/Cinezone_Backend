@@ -96,7 +96,12 @@ public class MaintenanceServiceImpl implements MaintenanceService {
     }
 
     @Override
-    public List<MaintenanceTicket> getAllTickets() {
+    public List<MaintenanceTicket> getAllTickets(User currentUser) {
+        if (currentUser.getRol() == Role.ADMIN_SEDE || currentUser.getRol() == Role.JEFE_SALA) {
+            List<Long> assignedSedeIds = currentUser.getSedes().stream().map(com.cinezone.demo.model.entity.Cinema::getId).toList();
+            if (assignedSedeIds.isEmpty()) return List.of();
+            return ticketRepository.findBySedeIdIn(assignedSedeIds);
+        }
         return ticketRepository.findAll();
     }
 }

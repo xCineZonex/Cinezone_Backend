@@ -11,4 +11,5 @@ public interface BudgetRequestRepository extends JpaRepository<BudgetRequest, Lo
     List<BudgetRequest> findBySedeId(Long sedeId);
     List<BudgetRequest> findAllByOrderByCreatedAtDesc();
     List<BudgetRequest> findBySedeIdOrderByCreatedAtDesc(Long sedeId);
+    List<BudgetRequest> findBySedeIdInOrderByCreatedAtDesc(java.util.Collection<Long> sedeIds);
 }
