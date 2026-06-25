@@ -321,7 +321,13 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         Auditorium auditorium = auditoriumRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Sala no encontrada"));
         
         validateOwnershipGuard(auditorium.getCinema().getId());
-        if (request.nombre() != null) auditorium.setNombre(request.nombre());
+        if (request.nombre() != null && !request.nombre().equals(auditorium.getNombre())) {
+            List<Showtime> activeShowtimes = showtimeRepository.findByAuditoriumIdAndActivaTrue(id);
+            if (!activeShowtimes.isEmpty()) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("No se puede editar el nombre de la sala porque tiene funciones programadas o activas.");
+            }
+            auditorium.setNombre(request.nombre());
+        }
         if (request.capacidadTotal() != null) auditorium.setCapacidadTotal(request.capacidadTotal());
         if (request.activa() != null) auditorium.setActiva(request.activa());
         return auditoriumRepository.save(auditorium);
@@ -484,7 +490,11 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         validateOwnershipGuard(auditorium.getCinema().getId());
 
         // Actualizar nombre y tipo si vinieron en el request
-        if (request.nombre() != null && !request.nombre().isBlank()) {
+        if (request.nombre() != null && !request.nombre().isBlank() && !request.nombre().equals(auditorium.getNombre())) {
+            List<Showtime> activeShowtimes = showtimeRepository.findByAuditoriumIdAndActivaTrue(auditoriumId);
+            if (!activeShowtimes.isEmpty()) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("No se puede editar el nombre de la sala porque tiene funciones programadas o activas.");
+            }
             auditorium.setNombre(request.nombre());
         }
         if (request.tipo() != null && !request.tipo().isBlank()) {
