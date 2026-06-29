@@ -31,6 +31,7 @@ public interface AdminCatalogService {
     // Endpoints de lectura para el Admin Dashboard
     java.util.List<Movie> getAllMovies();
     java.util.List<Showtime> getAllShowtimes();
+    java.util.List<Cinema> getAllCinemas();
     java.util.List<Auditorium> getAuditoriumsByCinema(Long cinemaId);
     java.util.List<Product> getAllProductsAdmin(Boolean esInsumo);
     java.util.List<LoyaltyTier> getAllLoyaltyTiers();

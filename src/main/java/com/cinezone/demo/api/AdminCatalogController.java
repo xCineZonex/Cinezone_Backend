@@ -89,6 +89,11 @@ public class AdminCatalogController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/sedes")
+    public ResponseEntity<List<Cinema>> getAllSedes() {
+        return ResponseEntity.ok(catalogService.getAllCinemas());
+    }
+
     @PostMapping("/sedes")
     public ResponseEntity<Cinema> createSede(@RequestBody CinemaCreateDTO request) {
         return ResponseEntity.ok(catalogService.createCinema(request));

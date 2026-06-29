@@ -464,6 +464,12 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional(readOnly = true)
+    public java.util.List<Cinema> getAllCinemas() {
+        return cinemaRepository.findAll();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public java.util.List<Auditorium> getAuditoriumsByCinema(Long cinemaId) {
         return auditoriumRepository.findByCinemaId(cinemaId);
     }
