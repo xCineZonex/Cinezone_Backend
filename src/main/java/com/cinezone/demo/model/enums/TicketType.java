@@ -3,5 +3,6 @@ public enum TicketType {
     NORMAL,
     TERCERA_EDAD,
     DISCAPACIDAD,
-    NINO
+    NINO,
+    BENEFICIO
 }
