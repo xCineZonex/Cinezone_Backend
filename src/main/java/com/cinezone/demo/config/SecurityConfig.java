@@ -44,7 +44,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // 2. Cartelera pública, sedes, funciones, catálogos y archivos estáticos
-                        .requestMatchers("/api/v1/peliculas/**", "/api/v1/sedes/**", "/api/v1/funciones/**", "/api/v1/public/**", "/api/v1/uploads/**", "/api/v1/maintenance/support/**").permitAll()
+                        .requestMatchers("/api/v1/peliculas/**", "/api/v1/sedes/**", "/api/v1/funciones/**", "/api/v1/public/**", "/api/v1/uploads/**").permitAll()
 
                         // 3. Rutas de Administrador y Operaciones
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN_SEDE", "JEFE_SALA")
