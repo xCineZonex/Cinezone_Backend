@@ -18,6 +18,8 @@ public class SystemAlertController {
     private final ReplacementRequestRepository replacementRequestRepository;
     private final com.cinezone.demo.repository.ProductRepository productRepository;
     private final com.cinezone.demo.repository.UserRepository userRepository;
+    private final com.cinezone.demo.repository.ProductStockRepository productStockRepository;
+    private final com.cinezone.demo.repository.InventoryMovementRepository inventoryMovementRepository;
 
     @GetMapping("/sede/{sedeId}/rol/{rol}")
     public ResponseEntity<List<Map<String, Object>>> getAlertsBySedeAndRol(@PathVariable Long sedeId, @PathVariable String rol) {
@@ -121,13 +123,15 @@ public class SystemAlertController {
             @RequestBody Map<String, Object> payload) {
         
         Long productoId = Long.valueOf(payload.get("productoId").toString());
+        Integer cantidad = payload.containsKey("cantidad") ? Integer.valueOf(payload.get("cantidad").toString()) : 0;
+        
         com.cinezone.demo.model.entity.Product product = productRepository.findById(productoId).orElseThrow();
         Long sedeId = currentUser.getSedes().iterator().next().getId();
         
         ReplacementRequest req = new ReplacementRequest();
         req.setCinema(currentUser.getSedes().iterator().next());
         req.setProduct(product);
-        req.setRequestedQuantity(0);
+        req.setRequestedQuantity(cantidad);
         req.setStatus("PENDING_ADMIN");
         req = replacementRequestRepository.save(req);
         
@@ -136,7 +140,7 @@ public class SystemAlertController {
         alert.setEmisorEmail(currentUser.getCorreo());
         alert.setReceptorRol(com.cinezone.demo.model.enums.Role.ADMIN_SEDE.name());
         alert.setTipoAlerta("RESTOCK");
-        alert.setMensaje("Alerta de Stock: El jefe de sala solicita restock del producto: " + product.getNombre());
+        alert.setMensaje("Alerta de Stock: El jefe de sala solicita " + cantidad + " unidades del insumo: " + product.getNombre());
         alert.setLeido(false);
         alert.setFechaCreacion(java.time.LocalDateTime.now());
         alert.setReplacementRequestId(req.getId());
@@ -146,21 +150,40 @@ public class SystemAlertController {
     }
 
     @PutMapping("/replacements/{id}/status")
-    public ResponseEntity<ReplacementRequest> updateRestockStatus(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+    public ResponseEntity<ReplacementRequest> updateRestockStatus(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User currentUser,
+            @PathVariable Long id, 
+            @RequestBody Map<String, String> payload) {
+            
         ReplacementRequest req = replacementRequestRepository.findById(id).orElseThrow();
-        String newStatus = payload.get("status"); // "EN_PROCESO" or "DENEGADO"
+        String newStatus = payload.get("status");
         req.setStatus(newStatus);
         req = replacementRequestRepository.save(req);
         
-        // Also find alert and mark read if DENEGADO (or just always mark read to clear it)
-        if ("DENEGADO".equals(newStatus)) {
-            List<SystemAlert> alerts = systemAlertRepository.findBySedeIdAndReceptorRolAndLeidoFalseOrderByFechaCreacionDesc(
-                req.getCinema().getId(), com.cinezone.demo.model.enums.Role.ADMIN_SEDE.name());
-            for (SystemAlert alert : alerts) {
-                if (req.getId().equals(alert.getReplacementRequestId())) {
-                    alert.setLeido(true);
-                    systemAlertRepository.save(alert);
-                }
+        if ("ATENDIDO".equals(newStatus)) {
+            com.cinezone.demo.model.entity.ProductStock stock = productStockRepository.findByProductIdAndCinemaId(req.getProduct().getId(), req.getCinema().getId()).orElse(null);
+            if (stock != null) {
+                stock.setStock(stock.getStock() + req.getRequestedQuantity());
+                productStockRepository.save(stock);
+                
+                com.cinezone.demo.model.entity.InventoryMovement mov = new com.cinezone.demo.model.entity.InventoryMovement();
+                mov.setProduct(req.getProduct());
+                mov.setCinema(req.getCinema());
+                mov.setCantidad(req.getRequestedQuantity());
+                mov.setResultingStock(stock.getStock());
+                mov.setTipo(com.cinezone.demo.model.enums.MovementType.ENTRADA);
+                mov.setMotivo("Reabastecimiento aprobado por Admin Sede");
+                mov.setRegisteredBy(currentUser.getNombre());
+                inventoryMovementRepository.save(mov);
+            }
+        }
+        
+        List<SystemAlert> alerts = systemAlertRepository.findBySedeIdAndReceptorRolAndLeidoFalseOrderByFechaCreacionDesc(
+            req.getCinema().getId(), com.cinezone.demo.model.enums.Role.ADMIN_SEDE.name());
+        for (SystemAlert alert : alerts) {
+            if (req.getId().equals(alert.getReplacementRequestId())) {
+                alert.setLeido(true);
+                systemAlertRepository.save(alert);
             }
         }
         
