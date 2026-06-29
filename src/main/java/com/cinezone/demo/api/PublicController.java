@@ -102,15 +102,16 @@ public class PublicController {
             @RequestParam(required = false) String categoria,
             @RequestParam(required = false) Long sedeId) {
         
-        Integer userTierRank = -1;
+        Integer tempUserTierRank = -1;
         String correo = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null ? 
             org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName() : null;
         if (correo != null && !correo.equals("anonymousUser")) {
             com.cinezone.demo.model.entity.User user = userRepository.findByCorreo(correo).orElse(null);
             if (user != null && user.getTier() != null) {
-                userTierRank = user.getTier().getRequiredYearlyVisits();
+                tempUserTierRank = user.getTier().getRequiredYearlyVisits();
             }
         }
+        final Integer userTierRank = tempUserTierRank;
 
         List<com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO> dtos;
 
