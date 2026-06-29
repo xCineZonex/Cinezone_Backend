@@ -272,18 +272,18 @@ public class BookingServiceImpl implements BookingService {
     public void lockSeat(com.cinezone.demo.dto.LockSeatRequestDTO request, User currentUser) {
         String redisKey = "asiento:" + request.funcionId() + ":" + request.asientoId();
         
-        // Intentar setear la llave solo si no existe, con expiración de 10 minutos (600 segundos)
+        // Intentar setear la llave solo si no existe, con expiración de 5 minutos (300 segundos)
         Boolean success = redisTemplate.opsForValue().setIfAbsent(
                 redisKey, 
                 currentUser.getId().toString(), 
-                java.time.Duration.ofMinutes(10)
+                java.time.Duration.ofMinutes(5)
         );
         
         if (Boolean.FALSE.equals(success)) {
             // Verificar si el asiento ya está bloqueado por el mismo usuario (renovar expiración)
             String lockOwner = (String) redisTemplate.opsForValue().get(redisKey);
             if (lockOwner != null && lockOwner.equals(currentUser.getId().toString())) {
-                redisTemplate.expire(redisKey, java.time.Duration.ofMinutes(10));
+                redisTemplate.expire(redisKey, java.time.Duration.ofMinutes(5));
                 return;
             }
             throw new BusinessRuleException("El asiento seleccionado ya está siendo reservado por otra persona.");
