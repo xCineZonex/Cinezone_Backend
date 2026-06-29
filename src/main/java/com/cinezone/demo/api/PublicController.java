@@ -24,6 +24,7 @@ public class PublicController {
     private final com.cinezone.demo.repository.ShowtimeRepository showtimeRepository;
     private final com.cinezone.demo.service.BookingService bookingService;
     private final com.cinezone.demo.repository.TicketBenefitRepository ticketBenefitRepository;
+    private final com.cinezone.demo.repository.UserRepository userRepository;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     @GetMapping("/sedes")
     public ResponseEntity<List<com.cinezone.demo.dto.CinemaDTO>> getSedes() {
@@ -101,12 +102,27 @@ public class PublicController {
             @RequestParam(required = false) String categoria,
             @RequestParam(required = false) Long sedeId) {
         
+        Integer userTierRank = -1;
+        String correo = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null ? 
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName() : null;
+        if (correo != null && !correo.equals("anonymousUser")) {
+            com.cinezone.demo.model.entity.User user = userRepository.findByCorreo(correo).orElse(null);
+            if (user != null && user.getTier() != null) {
+                userTierRank = user.getTier().getRequiredYearlyVisits();
+            }
+        }
+
         List<com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO> dtos;
 
         if (sedeId != null) {
             java.util.List<com.cinezone.demo.model.entity.ProductStock> validStocks = productStockRepository.findByCinemaId(sedeId).stream()
                     .filter(stock -> stock.getStock() != null && stock.getStock() > 0 && stock.getIsActive() != null && stock.getIsActive())
                     .filter(stock -> stock.getProduct().getDisponible() != null && stock.getProduct().getDisponible() && !Boolean.TRUE.equals(stock.getProduct().getEsInsumo()))
+                    .filter(stock -> {
+                        Product p = stock.getProduct();
+                        if (p.getRequiredTier() == null) return true;
+                        return userTierRank >= p.getRequiredTier().getRequiredYearlyVisits();
+                    })
                     .collect(Collectors.toList());
 
             if (categoria != null && !categoria.isEmpty() && !categoria.equalsIgnoreCase("Todos")) {
@@ -134,6 +150,10 @@ public class PublicController {
         } else {
             java.util.List<Product> productos = productRepository.findAll().stream()
                     .filter(p -> p.getDisponible() != null && p.getDisponible() && !Boolean.TRUE.equals(p.getEsInsumo()))
+                    .filter(p -> {
+                        if (p.getRequiredTier() == null) return true;
+                        return userTierRank >= p.getRequiredTier().getRequiredYearlyVisits();
+                    })
                     .collect(Collectors.toList());
 
             if (categoria != null && !categoria.isEmpty() && !categoria.equalsIgnoreCase("Todos")) {
