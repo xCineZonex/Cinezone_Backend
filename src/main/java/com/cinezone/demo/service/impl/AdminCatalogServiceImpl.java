@@ -153,9 +153,21 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             );
         }
 
-        // VALIDACIÓN DE TRASLAPE
+        // VALIDACIÓN DE TRASLAPE Y HORARIOS
         LocalDateTime inicioNueva = request.fechaHora();
         LocalDateTime finNueva = inicioNueva.plusMinutes(movie.getDuracionMinutos() + 30);
+
+        if (inicioNueva.toLocalTime().isBefore(java.time.LocalTime.of(16, 0)) && inicioNueva.toLocalTime().isAfter(java.time.LocalTime.of(1, 0))) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("El cine abre a partir de las 4:00 PM. No se pueden programar funciones antes de esa hora.");
+        }
+        
+        LocalDateTime limiteCierre = inicioNueva.toLocalDate().atTime(1, 0);
+        if (inicioNueva.toLocalTime().isAfter(java.time.LocalTime.of(16, 0))) {
+            limiteCierre = limiteCierre.plusDays(1);
+        }
+        if (finNueva.isAfter(limiteCierre)) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("La función termina después de la hora de cierre del cine (1:00 AM).");
+        }
 
         java.util.List<Showtime> activas = showtimeRepository.findByAuditoriumIdAndActivaTrue(auditorium.getId());
         for (Showtime existente : activas) {
@@ -368,11 +380,23 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             showtime.setActiva(request.activa());
         }
         
-        // VALIDACIÓN DE TRASLAPE
+        // VALIDACIÓN DE TRASLAPE Y HORARIO
         if (showtime.getActiva()) {
             LocalDateTime inicioNueva = showtime.getFechaHora();
             LocalDateTime finNueva = inicioNueva.plusMinutes(showtime.getMovie().getDuracionMinutos() + 30);
             
+            if (inicioNueva.toLocalTime().isBefore(java.time.LocalTime.of(16, 0)) && inicioNueva.toLocalTime().isAfter(java.time.LocalTime.of(1, 0))) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("El cine abre a partir de las 4:00 PM. No se pueden programar funciones antes de esa hora.");
+            }
+            
+            LocalDateTime limiteCierre = inicioNueva.toLocalDate().atTime(1, 0);
+            if (inicioNueva.toLocalTime().isAfter(java.time.LocalTime.of(16, 0))) {
+                limiteCierre = limiteCierre.plusDays(1);
+            }
+            if (finNueva.isAfter(limiteCierre)) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("La función termina después de la hora de cierre del cine (1:00 AM).");
+            }
+
             java.util.List<Showtime> activas = showtimeRepository.findByAuditoriumIdAndActivaTrue(showtime.getAuditorium().getId());
             for (Showtime existente : activas) {
                 if (existente.getId().equals(showtime.getId())) continue;

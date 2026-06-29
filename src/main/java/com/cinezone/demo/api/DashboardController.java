@@ -100,7 +100,6 @@ public class DashboardController {
             Map.entry("usuariosActivos", (int) usuariosActivos),
             Map.entry("topPeliculas", topPeliculas),
             Map.entry("ocupacionSedes", ocupacionSedes),
-            Map.entry("solicitudesPresupuestoPendientes", 0), // Puede venir de otro módulo si existiera
             Map.entry("alertasSistemaCajas", (int) alertas),
             Map.entry("termometroQuejas", termometroQuejas),
             Map.entry("distribucionClientes", distribucionClientes),
@@ -163,7 +162,7 @@ public class DashboardController {
             Map.entry("ingresosHoy", ingresosHoy.toString()),
             Map.entry("ocupacionPromedioDia", ocupacionPromedioDia),
             Map.entry("estadoCajas", Map.of("abiertas", 2, "total", 3)),
-            Map.entry("alertasCriticas", Map.of("mantenimiento", 0, "reclamos", (int) reclamosTotales, "sistemas", (int) alertas)),
+            Map.entry("alertasCriticas", Map.of("reclamos", (int) reclamosTotales, "sistemas", (int) alertas)),
             Map.entry("curvaAfluencia", curvaAfluencia),
             Map.entry("heatmapFunciones", heatmapFunciones),
             Map.entry("stockCritico", stockCritico),

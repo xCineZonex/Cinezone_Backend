@@ -113,7 +113,7 @@ public class DashboardAnalyticsServiceImpl implements DashboardAnalyticsService 
     public List<Map<String, Object>> getEstadoSalasData() {
         return Arrays.asList(
                 Map.of("sala", "Sala 1", "estado", "Operativa", "limpieza", "Pendiente"),
-                Map.of("sala", "Sala 2", "estado", "Mantenimiento", "limpieza", "N/A"),
+                Map.of("sala", "Sala 2", "estado", "Operativa", "limpieza", "N/A"),
                 Map.of("sala", "Sala 3", "estado", "Operativa", "limpieza", "Lista")
         );
     }
