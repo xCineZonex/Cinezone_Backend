@@ -171,9 +171,9 @@ public class SystemAlertController {
                 mov.setCinema(req.getCinema());
                 mov.setCantidad(req.getRequestedQuantity());
                 mov.setResultingStock(stock.getStock());
-                mov.setTipo(com.cinezone.demo.model.enums.MovementType.ENTRADA);
+                mov.setType(com.cinezone.demo.model.entity.InventoryMovement.MovementType.ENTRADA);
                 mov.setMotivo("Reabastecimiento aprobado por Admin Sede");
-                mov.setRegisteredBy(currentUser.getNombre());
+                mov.setRegisteredBy(currentUser);
                 inventoryMovementRepository.save(mov);
             }
         }
