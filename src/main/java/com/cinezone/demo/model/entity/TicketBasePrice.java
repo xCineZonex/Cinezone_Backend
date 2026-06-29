@@ -33,4 +33,26 @@ public class TicketBasePrice {
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
+
+    // Precios dinámicos por día de la semana (Si es null, se usa basePrice)
+    @Column(name = "price_monday", precision = 10, scale = 2)
+    private BigDecimal priceMonday;
+
+    @Column(name = "price_tuesday", precision = 10, scale = 2)
+    private BigDecimal priceTuesday;
+
+    @Column(name = "price_wednesday", precision = 10, scale = 2)
+    private BigDecimal priceWednesday;
+
+    @Column(name = "price_thursday", precision = 10, scale = 2)
+    private BigDecimal priceThursday;
+
+    @Column(name = "price_friday", precision = 10, scale = 2)
+    private BigDecimal priceFriday;
+
+    @Column(name = "price_saturday", precision = 10, scale = 2)
+    private BigDecimal priceSaturday;
+
+    @Column(name = "price_sunday", precision = 10, scale = 2)
+    private BigDecimal priceSunday;
 }

@@ -196,6 +196,13 @@ public class JefeSalaController {
             map.put("id", p.getId());
             map.put("localPrice", p.getLocalPrice());
             map.put("isActive", p.getIsActive());
+            map.put("priceMonday", p.getPriceMonday());
+            map.put("priceTuesday", p.getPriceTuesday());
+            map.put("priceWednesday", p.getPriceWednesday());
+            map.put("priceThursday", p.getPriceThursday());
+            map.put("priceFriday", p.getPriceFriday());
+            map.put("priceSaturday", p.getPriceSaturday());
+            map.put("priceSunday", p.getPriceSunday());
             if (p.getTicketBasePrice() != null) {
                 map.put("ticketBasePrice", Map.of(
                     "id", p.getTicketBasePrice().getId(),
@@ -222,6 +229,13 @@ public class JefeSalaController {
             TicketTypeSedePrice existing = existingOpt.get();
             if (request.getLocalPrice() != null) existing.setLocalPrice(request.getLocalPrice());
             if (request.getIsActive() != null) existing.setIsActive(request.getIsActive());
+            existing.setPriceMonday(request.getPriceMonday());
+            existing.setPriceTuesday(request.getPriceTuesday());
+            existing.setPriceWednesday(request.getPriceWednesday());
+            existing.setPriceThursday(request.getPriceThursday());
+            existing.setPriceFriday(request.getPriceFriday());
+            existing.setPriceSaturday(request.getPriceSaturday());
+            existing.setPriceSunday(request.getPriceSunday());
             saved = ticketTypeSedePriceRepository.save(existing);
         } else {
             saved = ticketTypeSedePriceRepository.save(request);

@@ -295,12 +295,17 @@ public class BookingServiceImpl implements BookingService {
         Showtime showtime = showtimeRepository.findById(showtimeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Función no encontrada"));
 
+        String formato = showtime.getFormatoProyeccion() != null ? showtime.getFormatoProyeccion().name() : "FORMAT_2D";
+
         Long sedeId = showtime.getCinema().getId();
         java.util.List<TicketBasePrice> basePrices = ticketBasePriceRepository.findAll();
         java.util.List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
 
         for (TicketBasePrice base : basePrices) {
             if (!base.getIsActive()) continue;
+            if (base.getFormato() != null && !base.getFormato().equals("TODOS") && !base.getFormato().equals(formato)) {
+                continue; // Filtrar entradas por el tipo de formato de la sala
+            }
             BigDecimal finalPrice = calculateTicketPrice(showtime, base.getTicketType());
             result.add(java.util.Map.of(
                 "nombre", base.getName(),
@@ -323,10 +328,21 @@ public class BookingServiceImpl implements BookingService {
                                  
         if (base != null) {
             basePrice = base.getBasePrice();
+            if (showtime != null) {
+                java.time.DayOfWeek dow = showtime.getFechaHora().getDayOfWeek();
+                BigDecimal dayBasePrice = getDayPrice(base, dow);
+                if (dayBasePrice != null) basePrice = dayBasePrice;
+            }
+
             if (sedeId != null) {
                 TicketTypeSedePrice sedePrice = ticketTypeSedePriceRepository.findByCinemaIdAndTicketBasePriceId(sedeId, base.getId()).orElse(null);
                 if (sedePrice != null && sedePrice.getIsActive()) {
                     basePrice = sedePrice.getLocalPrice();
+                    if (showtime != null) {
+                        java.time.DayOfWeek dow = showtime.getFechaHora().getDayOfWeek();
+                        BigDecimal daySedePrice = getSedeDayPrice(sedePrice, dow);
+                        if (daySedePrice != null) basePrice = daySedePrice;
+                    }
                 }
             }
         }
@@ -368,6 +384,30 @@ public class BookingServiceImpl implements BookingService {
         }
         
         return basePrice;
+    }
+
+    private BigDecimal getDayPrice(TicketBasePrice base, java.time.DayOfWeek dow) {
+        return switch (dow) {
+            case MONDAY -> base.getPriceMonday();
+            case TUESDAY -> base.getPriceTuesday();
+            case WEDNESDAY -> base.getPriceWednesday();
+            case THURSDAY -> base.getPriceThursday();
+            case FRIDAY -> base.getPriceFriday();
+            case SATURDAY -> base.getPriceSaturday();
+            case SUNDAY -> base.getPriceSunday();
+        };
+    }
+
+    private BigDecimal getSedeDayPrice(TicketTypeSedePrice sedePrice, java.time.DayOfWeek dow) {
+        return switch (dow) {
+            case MONDAY -> sedePrice.getPriceMonday();
+            case TUESDAY -> sedePrice.getPriceTuesday();
+            case WEDNESDAY -> sedePrice.getPriceWednesday();
+            case THURSDAY -> sedePrice.getPriceThursday();
+            case FRIDAY -> sedePrice.getPriceFriday();
+            case SATURDAY -> sedePrice.getPriceSaturday();
+            case SUNDAY -> sedePrice.getPriceSunday();
+        };
     }
 
     @Override
