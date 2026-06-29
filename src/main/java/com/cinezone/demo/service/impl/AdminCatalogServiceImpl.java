@@ -93,7 +93,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
         validateOwnershipGuard(cinema.getId());
 
-        if (auditoriumRepository.existsByCinemaIdAndNameIgnoreCase(cinema.getId(), request.nombre())) {
+        if (auditoriumRepository.existsByCinemaIdAndNombreIgnoreCase(cinema.getId(), request.nombre())) {
             throw new com.cinezone.demo.exception.BusinessRuleException("Ya existe una sala con el nombre '" + request.nombre() + "' en esta sede.");
         }
 
@@ -338,7 +338,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         
         validateOwnershipGuard(auditorium.getCinema().getId());
         if (request.nombre() != null && !request.nombre().equals(auditorium.getNombre())) {
-            if (auditoriumRepository.existsByCinemaIdAndNameIgnoreCase(auditorium.getCinema().getId(), request.nombre())) {
+            if (auditoriumRepository.existsByCinemaIdAndNombreIgnoreCase(auditorium.getCinema().getId(), request.nombre())) {
                 throw new com.cinezone.demo.exception.BusinessRuleException("Ya existe una sala con el nombre '" + request.nombre() + "' en esta sede.");
             }
             java.util.List<Showtime> activeShowtimes = showtimeRepository.findByAuditoriumIdAndActivaTrue(id);
@@ -478,7 +478,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
         validateOwnershipGuard(cinema.getId());
 
-        if (auditoriumRepository.existsByCinemaIdAndNameIgnoreCase(cinema.getId(), request.nombre())) {
+        if (auditoriumRepository.existsByCinemaIdAndNombreIgnoreCase(cinema.getId(), request.nombre())) {
             throw new com.cinezone.demo.exception.BusinessRuleException("Ya existe una sala con el nombre '" + request.nombre() + "' en esta sede.");
         }
 
@@ -526,7 +526,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
         // Actualizar nombre y tipo si vinieron en el request
         if (request.nombre() != null && !request.nombre().isBlank() && !request.nombre().equals(auditorium.getNombre())) {
-            if (auditoriumRepository.existsByCinemaIdAndNameIgnoreCase(auditorium.getCinema().getId(), request.nombre())) {
+            if (auditoriumRepository.existsByCinemaIdAndNombreIgnoreCase(auditorium.getCinema().getId(), request.nombre())) {
                 throw new com.cinezone.demo.exception.BusinessRuleException("Ya existe una sala con el nombre '" + request.nombre() + "' en esta sede.");
             }
             java.util.List<Showtime> activeShowtimes = showtimeRepository.findByAuditoriumIdAndActivaTrue(auditoriumId);
