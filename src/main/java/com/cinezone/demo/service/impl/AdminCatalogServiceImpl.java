@@ -135,9 +135,9 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             throw new com.cinezone.demo.exception.BusinessRuleException("Esta película no ha sido asignada a esta Sede por la central.");
         }
 
-        // VALIDACIÓN DE PELÍCULA EN CARTELERA
-        if (movie.getEstado() != com.cinezone.demo.model.enums.MovieStatus.EN_CARTELERA) {
-            throw new com.cinezone.demo.exception.BusinessRuleException("No se pueden programar funciones para películas que no están en cartelera.");
+        // VALIDACIÓN DE PELÍCULA EN CARTELERA / PREVENTA / PROXIMAMENTE
+        if (movie.getEstado() == com.cinezone.demo.model.enums.MovieStatus.RETIRADA) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("No se pueden programar funciones para películas retiradas.");
         }
 
         // VALIDACIÓN DE FECHA DE ESTRENO
