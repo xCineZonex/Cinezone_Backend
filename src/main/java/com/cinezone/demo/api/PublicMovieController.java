@@ -15,9 +15,17 @@ import java.util.List;
 public class PublicMovieController {
 
     private final MovieRepository movieRepository;
+    private final com.cinezone.demo.repository.MovieDistributionRepository movieDistributionRepository;
 
     @GetMapping
-    public ResponseEntity<List<Movie>> getAllMovies() {
+    public ResponseEntity<List<Movie>> getAllMovies(@RequestParam(required = false) Long sedeId) {
+        if (sedeId != null) {
+            List<Movie> movies = movieDistributionRepository.findAllByCinemaId(sedeId).stream()
+                    .map(com.cinezone.demo.model.entity.MovieDistribution::getMovie)
+                    .filter(m -> m.getEstado() != MovieStatus.RETIRADA)
+                    .toList();
+            return ResponseEntity.ok(movies);
+        }
         return ResponseEntity.ok(movieRepository.findByEstadoNot(MovieStatus.RETIRADA));
     }
 
@@ -29,9 +37,16 @@ public class PublicMovieController {
     }
 
     @GetMapping("/estado/{estado}")
-    public ResponseEntity<List<Movie>> getMoviesByEstado(@PathVariable String estado) {
+    public ResponseEntity<List<Movie>> getMoviesByEstado(@PathVariable String estado, @RequestParam(required = false) Long sedeId) {
         try {
             MovieStatus status = MovieStatus.valueOf(estado.toUpperCase());
+            if (sedeId != null) {
+                List<Movie> movies = movieDistributionRepository.findAllByCinemaId(sedeId).stream()
+                        .map(com.cinezone.demo.model.entity.MovieDistribution::getMovie)
+                        .filter(m -> m.getEstado() == status)
+                        .toList();
+                return ResponseEntity.ok(movies);
+            }
             return ResponseEntity.ok(movieRepository.findByEstado(status));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
