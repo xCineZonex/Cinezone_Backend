@@ -119,7 +119,7 @@ public class UserController {
     public ResponseEntity<UserProfileResponseDTO> updateProfile(
             @org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User user,
             @RequestBody com.cinezone.demo.dto.UserUpdateDTO updates) {
-        return ResponseEntity.ok(userService.updateProfile(user.getCorreo(), updates));
+        return ResponseEntity.ok(userService.updateMyProfile(updates));
     }
 
     @PostMapping("/me/module")
