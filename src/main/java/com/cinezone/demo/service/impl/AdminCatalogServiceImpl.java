@@ -72,7 +72,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 .build();
         movie = movieRepository.save(movie);
         auditService.logAction("Movie", movie.getId(), "CREATE", getCurrentUser(), "Película creada: " + movie.getTitulo());
-        return movie;
+        return MovieDTO.fromEntity(movie);
     }
 
     @Override
@@ -115,7 +115,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                     .auditorium(auditorium)
                     .build());
         }
-        return auditorium;
+        return com.cinezone.demo.dto.AuditoriumDTO.fromEntity(auditorium);
     }
 
     @Override
@@ -250,7 +250,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
         @Override
         @Transactional
-        public Product createProduct(com.cinezone.demo.dto.AdminCatalogDTOs.ProductCreateDTO request) {
+        public com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO createProduct(com.cinezone.demo.dto.AdminCatalogDTOs.ProductCreateDTO request) {
         LoyaltyTier requiredTier = null;
         if (request.requiredTierId() != null) {
             requiredTier = tierRepository.findById(request.requiredTierId())
@@ -296,7 +296,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         }
 
         auditService.logAction("Product", product.getId(), "CREATE", getCurrentUser(), "Producto creado: " + product.getNombre());
-        return product;
+        return com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO.fromEntity(product);
     }
 
     @Override
@@ -316,7 +316,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         if (request.fechaFinCartelera() != null) movie.setFechaFinCartelera(request.fechaFinCartelera());
         movie = movieRepository.save(movie);
         auditService.logAction("Movie", movie.getId(), "UPDATE", getCurrentUser(), "Película actualizada");
-        return movie;
+        return MovieDTO.fromEntity(movie);
     }
 
     @Override
@@ -513,7 +513,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                     .enMantenimiento(item.enMantenimiento() != null ? item.enMantenimiento() : false)
                     .build());
         }
-        return auditorium;
+        return com.cinezone.demo.dto.AuditoriumDTO.fromEntity(auditorium);
     }
 
     @Override
@@ -598,7 +598,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         }
         product = productRepository.save(product);
         auditService.logAction("Product", product.getId(), "UPDATE", getCurrentUser(), "Producto actualizado");
-        return product;
+        return com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO.fromEntity(product);
     }
 
     @Override
@@ -761,6 +761,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
     public java.util.List<com.cinezone.demo.dto.MovieDTO> getMoviesBySede(Long sedeId) {
         return movieDistributionRepository.findAllByCinemaId(sedeId).stream()
                 .map(MovieDistribution::getMovie)
+                .map(MovieDTO::fromEntity)
                 .toList();
     }
 
