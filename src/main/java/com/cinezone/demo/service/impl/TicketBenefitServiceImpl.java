@@ -77,11 +77,12 @@ public class TicketBenefitServiceImpl implements TicketBenefitService {
 
         // SYNC: Update or create matching TicketBasePrice
         if (benefit.getTicketBasePriceId() != null) {
-            ticketBasePriceRepository.findById(benefit.getTicketBasePriceId()).ifPresent(tbp -> {
+            TicketBasePrice tbp = ticketBasePriceRepository.findById(benefit.getTicketBasePriceId()).orElse(null);
+            if (tbp != null) {
                 tbp.setName(benefit.getName() + " (" + tier.getName() + ")");
                 tbp.setBasePrice(benefit.getPrice());
                 ticketBasePriceRepository.save(tbp);
-            });
+            }
         } else {
             TicketBasePrice tbp = new TicketBasePrice();
             tbp.setName(benefit.getName() + " (" + tier.getName() + ")");
