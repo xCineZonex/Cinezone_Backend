@@ -1,7 +1,7 @@
 package com.cinezone.demo.service.impl;
 
-import com.cinezone.demo.dto.BookingDTOs.PurchaseRequestDTO;
-import com.cinezone.demo.dto.BookingDTOs.SeatSelectionDTO;
+import com.cinezone.demo.dto.PurchaseRequestDTO;
+import com.cinezone.demo.dto.PurchaseRequestDTO.SeatPurchaseDTO;
 import com.cinezone.demo.exception.BenefitFormatMismatchException;
 import com.cinezone.demo.model.entity.Seat;
 import com.cinezone.demo.model.entity.Showtime;
