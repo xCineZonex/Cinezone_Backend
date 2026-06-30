@@ -56,7 +56,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional
-    public Movie createMovie(MovieCreateDTO request) {
+    public com.cinezone.demo.dto.MovieDTO createMovie(MovieCreateDTO request) {
         LocalDate fechaFin = request.fechaFinCartelera() != null 
             ? request.fechaFinCartelera() 
             : request.fechaEstreno().plusDays(21);
@@ -87,7 +87,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional
-    public Auditorium createAuditoriumWithSeats(AuditoriumCreateDTO request) {
+    public com.cinezone.demo.dto.AuditoriumDTO createAuditoriumWithSeats(AuditoriumCreateDTO request) {
         Cinema cinema = cinemaRepository.findById(request.cinemaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada"));
 
@@ -120,7 +120,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional
-    public Showtime createShowtime(ShowtimeCreateDTO request) {
+    public com.cinezone.demo.dto.ShowtimeDTO createShowtime(ShowtimeCreateDTO request) {
         Movie movie = movieRepository.findById(request.movieId())
                 .orElseThrow(() -> new ResourceNotFoundException("Película no encontrada"));
         Auditorium auditorium = auditoriumRepository.findById(request.auditoriumId())
@@ -199,17 +199,17 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 .formatoProyeccion(request.formatoProyeccion()).activa(true)
                 .precioMultiplicador(multiplicador)
                 .build();
-        return showtimeRepository.save(showtime);
+        return com.cinezone.demo.dto.ShowtimeDTO.fromEntity(showtimeRepository.save(showtime));
     }
     @Override
     @Transactional
-    public Movie changeMovieStatus(Long movieId, String newStatus) {
+    public com.cinezone.demo.dto.MovieDTO changeMovieStatus(Long movieId, String newStatus) {
         Movie movie = movieRepository.findById(movieId)
                 .orElseThrow(() -> new ResourceNotFoundException("Película no encontrada"));
 
         // Convertimos el texto (Ej: "RETIRADA") al valor del Enum
         movie.setEstado(MovieStatus.valueOf(newStatus.toUpperCase()));
-        return movieRepository.save(movie);
+        return com.cinezone.demo.dto.MovieDTO.fromEntity(movieRepository.save(movie));
     }
 
     @Override
@@ -237,7 +237,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional
-    public Auditorium toggleAuditoriumMaintenance(Long auditoriumId, boolean enMantenimiento) {
+    public com.cinezone.demo.dto.AuditoriumDTO toggleAuditoriumMaintenance(Long auditoriumId, boolean enMantenimiento) {
         Auditorium auditorium = auditoriumRepository.findById(auditoriumId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sala no encontrada"));
 
@@ -245,7 +245,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
         // Si entra en mantenimiento (true), la sala se desactiva (activa = false)
         auditorium.setActiva(!enMantenimiento);
-        return auditoriumRepository.save(auditorium);
+        return com.cinezone.demo.dto.AuditoriumDTO.fromEntity(auditoriumRepository.save(auditorium));
         }
 
         @Override
@@ -301,7 +301,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional
-    public Movie updateMovie(Long id, MovieUpdateDTO request) {
+    public com.cinezone.demo.dto.MovieDTO updateMovie(Long id, MovieUpdateDTO request) {
         Movie movie = movieRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Película no encontrada"));
         if (request.titulo() != null) movie.setTitulo(request.titulo());
         if (request.sinopsis() != null) movie.setSinopsis(request.sinopsis());
@@ -333,7 +333,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional
-    public Auditorium updateAuditorium(Long id, AuditoriumUpdateDTO request) {
+    public com.cinezone.demo.dto.AuditoriumDTO updateAuditorium(Long id, AuditoriumUpdateDTO request) {
         Auditorium auditorium = auditoriumRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Sala no encontrada"));
         
         validateOwnershipGuard(auditorium.getCinema().getId());
@@ -349,12 +349,12 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         }
         if (request.capacidadTotal() != null) auditorium.setCapacidadTotal(request.capacidadTotal());
         if (request.activa() != null) auditorium.setActiva(request.activa());
-        return auditoriumRepository.save(auditorium);
+        return com.cinezone.demo.dto.AuditoriumDTO.fromEntity(auditoriumRepository.save(auditorium));
     }
 
     @Override
     @Transactional
-    public Showtime updateShowtime(Long id, ShowtimeUpdateDTO request) {
+    public com.cinezone.demo.dto.ShowtimeDTO updateShowtime(Long id, ShowtimeUpdateDTO request) {
         Showtime showtime = showtimeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Función no encontrada"));
         
         validateOwnershipGuard(showtime.getCinema().getId());
@@ -410,7 +410,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             }
         }
         
-        return showtimeRepository.save(showtime);
+        return com.cinezone.demo.dto.ShowtimeDTO.fromEntity(showtimeRepository.save(showtime));
     }
 
     @Override
@@ -452,14 +452,14 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional(readOnly = true)
-    public java.util.List<Movie> getAllMovies() {
-        return movieRepository.findAll();
+    public java.util.List<com.cinezone.demo.dto.MovieDTO> getAllMovies() {
+        return movieRepository.findAll().stream().map(com.cinezone.demo.dto.MovieDTO::fromEntity).collect(java.util.stream.Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public java.util.List<Showtime> getAllShowtimes() {
-        return showtimeRepository.findAll();
+    public java.util.List<com.cinezone.demo.dto.ShowtimeDTO> getAllShowtimes() {
+        return showtimeRepository.findAll().stream().map(com.cinezone.demo.dto.ShowtimeDTO::fromEntity).collect(java.util.stream.Collectors.toList());
     }
 
     @Override
@@ -470,15 +470,15 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional(readOnly = true)
-    public java.util.List<Auditorium> getAuditoriumsByCinema(Long cinemaId) {
-        return auditoriumRepository.findByCinemaId(cinemaId);
+    public java.util.List<com.cinezone.demo.dto.AuditoriumDTO> getAuditoriumsByCinema(Long cinemaId) {
+        return auditoriumRepository.findByCinemaId(cinemaId).stream().map(com.cinezone.demo.dto.AuditoriumDTO::fromEntity).collect(java.util.stream.Collectors.toList());
     }
 
     // ── EDITOR DE LIENZO INTERACTIVO ──────────────────────────────────────────
 
     @Override
     @Transactional
-    public Auditorium saveAuditoriumLayout(AuditoriumLayoutDTO request) {
+    public com.cinezone.demo.dto.AuditoriumDTO saveAuditoriumLayout(AuditoriumLayoutDTO request) {
         Cinema cinema = cinemaRepository.findById(request.cinemaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada"));
 
@@ -524,7 +524,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional
-    public Auditorium updateAuditoriumLayout(Long auditoriumId, AuditoriumLayoutDTO request) {
+    public com.cinezone.demo.dto.AuditoriumDTO updateAuditoriumLayout(Long auditoriumId, AuditoriumLayoutDTO request) {
         Auditorium auditorium = auditoriumRepository.findById(auditoriumId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sala no encontrada"));
 
@@ -567,7 +567,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         }
 
         auditorium.setCapacidadTotal(request.asientos().size());
-        return auditoriumRepository.save(auditorium);
+        return com.cinezone.demo.dto.AuditoriumDTO.fromEntity(auditoriumRepository.save(auditorium));
     }
 
     @Override
@@ -758,7 +758,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional(readOnly = true)
-    public java.util.List<Movie> getMoviesBySede(Long sedeId) {
+    public java.util.List<com.cinezone.demo.dto.MovieDTO> getMoviesBySede(Long sedeId) {
         return movieDistributionRepository.findAllByCinemaId(sedeId).stream()
                 .map(MovieDistribution::getMovie)
                 .toList();

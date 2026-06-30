@@ -63,12 +63,12 @@ public class AdminCatalogController {
     }
 
     @GetMapping("/peliculas")
-    public ResponseEntity<List<Movie>> getMovies() {
+    public ResponseEntity<List<com.cinezone.demo.dto.MovieDTO>> getMovies() {
         return ResponseEntity.ok(catalogService.getAllMovies());
     }
 
     @GetMapping("/funciones")
-    public ResponseEntity<List<Showtime>> getShowtimes() {
+    public ResponseEntity<List<com.cinezone.demo.dto.ShowtimeDTO>> getShowtimes() {
         return ResponseEntity.ok(catalogService.getAllShowtimes());
     }
 
@@ -105,17 +105,17 @@ public class AdminCatalogController {
     }
 
     @GetMapping("/sedes/{sedeId}/salas")
-    public ResponseEntity<List<Auditorium>> getSalasPorSede(@PathVariable Long sedeId) {
+    public ResponseEntity<List<com.cinezone.demo.dto.AuditoriumDTO>> getSalasPorSede(@PathVariable Long sedeId) {
         return ResponseEntity.ok(catalogService.getAuditoriumsByCinema(sedeId));
     }
 
     @PostMapping("/funciones")
-    public ResponseEntity<Showtime> createShowtime(@RequestBody ShowtimeCreateDTO request) {
+    public ResponseEntity<com.cinezone.demo.dto.ShowtimeDTO> createShowtime(@RequestBody ShowtimeCreateDTO request) {
         return ResponseEntity.ok(catalogService.createShowtime(request));
     }
 
     @PutMapping("/funciones/{id}")
-    public ResponseEntity<Showtime> updateShowtime(@PathVariable Long id, @RequestBody ShowtimeUpdateDTO request) {
+    public ResponseEntity<com.cinezone.demo.dto.ShowtimeDTO> updateShowtime(@PathVariable Long id, @RequestBody ShowtimeUpdateDTO request) {
         return ResponseEntity.ok(catalogService.updateShowtime(id, request));
     }
 
@@ -126,17 +126,17 @@ public class AdminCatalogController {
     }
 
     @PostMapping("/peliculas")
-    public ResponseEntity<Movie> createMovie(@RequestBody MovieCreateDTO request) {
+    public ResponseEntity<com.cinezone.demo.dto.MovieDTO> createMovie(@RequestBody MovieCreateDTO request) {
         return ResponseEntity.ok(catalogService.createMovie(request));
     }
 
     @PutMapping("/peliculas/{id}")
-    public ResponseEntity<Movie> updateMovie(@PathVariable Long id, @RequestBody MovieUpdateDTO request) {
+    public ResponseEntity<com.cinezone.demo.dto.MovieDTO> updateMovie(@PathVariable Long id, @RequestBody MovieUpdateDTO request) {
         return ResponseEntity.ok(catalogService.updateMovie(id, request));
     }
 
     @PatchMapping("/peliculas/{id}/estado")
-    public ResponseEntity<Movie> changeMovieStatus(@PathVariable Long id, @RequestParam(required = false) String estado) {
+    public ResponseEntity<com.cinezone.demo.dto.MovieDTO> changeMovieStatus(@PathVariable Long id, @RequestParam(required = false) String estado) {
         return ResponseEntity.ok(catalogService.changeMovieStatus(id, estado));
     }
 
@@ -158,12 +158,12 @@ public class AdminCatalogController {
     }
 
     @GetMapping("/sedes/{sedeId}/peliculas")
-    public ResponseEntity<List<Movie>> getMoviesBySede(@PathVariable Long sedeId) {
+    public ResponseEntity<List<com.cinezone.demo.dto.MovieDTO>> getMoviesBySede(@PathVariable Long sedeId) {
         return ResponseEntity.ok(catalogService.getMoviesBySede(sedeId));
     }
 
     @PostMapping("/salas/layout")
-    public ResponseEntity<Auditorium> saveAuditoriumLayout(@RequestBody AuditoriumLayoutDTO request) {
+    public ResponseEntity<com.cinezone.demo.dto.AuditoriumDTO> saveAuditoriumLayout(@RequestBody AuditoriumLayoutDTO request) {
         return ResponseEntity.ok(catalogService.saveAuditoriumLayout(request));
     }
 
@@ -173,12 +173,12 @@ public class AdminCatalogController {
     }
 
     @PutMapping("/salas/{auditoriumId}/layout")
-    public ResponseEntity<Auditorium> updateAuditoriumLayout(@PathVariable Long auditoriumId, @RequestBody AuditoriumLayoutDTO request) {
+    public ResponseEntity<com.cinezone.demo.dto.AuditoriumDTO> updateAuditoriumLayout(@PathVariable Long auditoriumId, @RequestBody AuditoriumLayoutDTO request) {
         return ResponseEntity.ok(catalogService.updateAuditoriumLayout(auditoriumId, request));
     }
 
     @PatchMapping("/salas/{id}/mantenimiento")
-    public ResponseEntity<Auditorium> toggleAuditoriumMaintenance(@PathVariable Long id, @RequestParam boolean activar) {
+    public ResponseEntity<com.cinezone.demo.dto.AuditoriumDTO> toggleAuditoriumMaintenance(@PathVariable Long id, @RequestParam boolean activar) {
         return ResponseEntity.ok(catalogService.toggleAuditoriumMaintenance(id, activar));
     }
 
