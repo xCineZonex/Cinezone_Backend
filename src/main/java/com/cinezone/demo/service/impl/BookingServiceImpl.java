@@ -175,7 +175,7 @@ public class BookingServiceImpl implements BookingService {
                     if (ben != null && ben.getFormato() != null && !ben.getFormato().equals("TODOS")) {
                         // Compatibilidad con "2D" y "FORMAT_2D"
                         String benFmt = ben.getFormato();
-                        String showFmt = showtime.getFormato();
+                        String showFmt = showtime.getFormatoProyeccion().name();
                         boolean match = benFmt.equals(showFmt) || 
                                         (benFmt.equals("2D") && "FORMAT_2D".equals(showFmt)) || 
                                         (benFmt.equals("FORMAT_2D") && "2D".equals(showFmt)) ||
