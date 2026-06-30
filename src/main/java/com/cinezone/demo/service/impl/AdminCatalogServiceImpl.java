@@ -72,7 +72,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 .build();
         movie = movieRepository.save(movie);
         auditService.logAction("Movie", movie.getId(), "CREATE", getCurrentUser(), "Película creada: " + movie.getTitulo());
-        return MovieDTO.fromEntity(movie);
+        return com.cinezone.demo.dto.MovieDTO.fromEntity(movie);
     }
 
     @Override
@@ -316,7 +316,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         if (request.fechaFinCartelera() != null) movie.setFechaFinCartelera(request.fechaFinCartelera());
         movie = movieRepository.save(movie);
         auditService.logAction("Movie", movie.getId(), "UPDATE", getCurrentUser(), "Película actualizada");
-        return MovieDTO.fromEntity(movie);
+        return com.cinezone.demo.dto.MovieDTO.fromEntity(movie);
     }
 
     @Override
@@ -761,7 +761,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
     public java.util.List<com.cinezone.demo.dto.MovieDTO> getMoviesBySede(Long sedeId) {
         return movieDistributionRepository.findAllByCinemaId(sedeId).stream()
                 .map(MovieDistribution::getMovie)
-                .map(MovieDTO::fromEntity)
+                .map(com.cinezone.demo.dto.MovieDTO::fromEntity)
                 .toList();
     }
 
