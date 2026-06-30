@@ -766,8 +766,24 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional(readOnly = true)
-    public java.util.List<TicketBasePrice> getTicketBasePrices() {
-        return ticketBasePriceRepository.findAll();
+    public java.util.List<com.cinezone.demo.dto.TicketBasePriceDTO> getTicketBasePrices() {
+        return ticketBasePriceRepository.findAll().stream().map(entity -> new com.cinezone.demo.dto.TicketBasePriceDTO(
+                entity.getId(),
+                entity.getTicketType() != null ? entity.getTicketType().name() : null,
+                entity.getFormato(),
+                entity.getName(),
+                entity.getBasePrice(),
+                entity.getIsActive(),
+                entity.getBeneficio() != null ? entity.getBeneficio().getId() : null,
+                entity.getBeneficio() != null ? entity.getBeneficio().getName() : null,
+                entity.getPriceMonday(),
+                entity.getPriceTuesday(),
+                entity.getPriceWednesday(),
+                entity.getPriceThursday(),
+                entity.getPriceFriday(),
+                entity.getPriceSaturday(),
+                entity.getPriceSunday()
+        )).toList();
     }
 
     @Override

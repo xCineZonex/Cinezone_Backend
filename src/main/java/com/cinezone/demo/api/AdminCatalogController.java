@@ -198,7 +198,7 @@ public class AdminCatalogController {
     }
 
     @GetMapping("/tipos-entrada")
-    public ResponseEntity<List<TicketBasePrice>> getTicketBasePrices() {
+    public ResponseEntity<List<com.cinezone.demo.dto.TicketBasePriceDTO>> getTicketBasePrices() {
         return ResponseEntity.ok(catalogService.getTicketBasePrices());
     }
 

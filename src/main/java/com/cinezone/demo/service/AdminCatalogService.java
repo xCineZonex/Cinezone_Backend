@@ -47,6 +47,6 @@ public interface AdminCatalogService {
     java.util.List<com.cinezone.demo.dto.AdminCatalogDTOs.IngredientDetailDTO> getComboRecipe(Long comboId);
 
     // Tipos de Entrada
-    java.util.List<TicketBasePrice> getTicketBasePrices();
+    java.util.List<com.cinezone.demo.dto.TicketBasePriceDTO> getTicketBasePrices();
     TicketBasePrice saveTicketBasePrice(TicketBasePrice request);
 }
