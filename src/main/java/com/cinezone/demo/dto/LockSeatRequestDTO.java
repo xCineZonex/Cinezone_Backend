@@ -4,5 +4,6 @@ import jakarta.validation.constraints.NotNull;
 
 public record LockSeatRequestDTO(
         @NotNull Long funcionId,
-        @NotNull Long asientoId
+        @NotNull Long asientoId,
+        String clienteId
 ) {}

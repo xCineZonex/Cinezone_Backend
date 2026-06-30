@@ -187,12 +187,14 @@ public class BookingServiceImpl implements BookingService {
                     com.cinezone.demo.model.entity.TicketBenefit ben = ticketBenefitRepository.findById(benId).orElse(null);
                     if (ben != null && ben.getMonthlyLimit() != null && ben.getMonthlyLimit() > 0) {
                         com.cinezone.demo.model.entity.BenefitMonthlyUsage usage;
+                        final com.cinezone.demo.model.entity.User finalBuyerUser = buyerUser;
+                        final com.cinezone.demo.model.entity.TicketBenefit finalBen = ben;
                         try {
                             usage = benefitMonthlyUsageRepository.findForUpdate(buyerUser.getId(), benId, currentMonth, currentYear)
                                 .orElseGet(() -> benefitMonthlyUsageRepository.saveAndFlush(
                                     com.cinezone.demo.model.entity.BenefitMonthlyUsage.builder()
-                                        .user(buyerUser)
-                                        .benefit(ben)
+                                        .user(finalBuyerUser)
+                                        .benefit(finalBen)
                                         .mes(currentMonth)
                                         .anio(currentYear)
                                         .usos(0)

@@ -125,6 +125,12 @@ public class ReservationServiceImpl implements ReservationService {
         } else if (lockOwner != null) {
             throw new BusinessRuleException("No puedes liberar un asiento que no te pertenece.");
         }
-        // Si la clave ya no existe (expiró), simplemente no hacemos nada
+    }
+    
+    private SeatResponseDTO mapToDTO(Seat seat) {
+        return new SeatResponseDTO(
+                seat.getId(), seat.getFila(), seat.getNumero(), seat.getTipo(), "BLOQUEADO_TEMP",
+                seat.getGridRow(), seat.getGridCol()
+        );
     }
 }
