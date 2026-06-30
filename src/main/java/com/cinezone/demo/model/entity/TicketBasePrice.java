@@ -1,6 +1,7 @@
 package com.cinezone.demo.model.entity;
 
 import com.cinezone.demo.model.enums.TicketType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -36,6 +37,7 @@ public class TicketBasePrice {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "beneficio_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private TicketBenefit beneficio;
 
     // Precios dinámicos por día de la semana (Si es null, se usa basePrice)
