@@ -464,8 +464,8 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional(readOnly = true)
-    public java.util.List<Cinema> getAllCinemas() {
-        return cinemaRepository.findAll();
+    public java.util.List<com.cinezone.demo.dto.CinemaDTO> getAllCinemas() {
+        return cinemaRepository.findAll().stream().map(com.cinezone.demo.dto.CinemaDTO::fromEntity).toList();
     }
 
     @Override
@@ -518,8 +518,8 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional(readOnly = true)
-    public java.util.List<Seat> getAuditoriumSeats(Long auditoriumId) {
-        return seatRepository.findByAuditoriumId(auditoriumId);
+    public java.util.List<com.cinezone.demo.dto.SeatDTO> getAuditoriumSeats(Long auditoriumId) {
+        return seatRepository.findByAuditoriumId(auditoriumId).stream().map(com.cinezone.demo.dto.SeatDTO::fromEntity).toList();
     }
 
     @Override
@@ -636,26 +636,26 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional(readOnly = true)
-    public java.util.List<Product> getAllProductsAdmin(Boolean esInsumo) {
+    public java.util.List<com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO> getAllProductsAdmin(Boolean esInsumo) {
         if (esInsumo != null) {
-            return productRepository.findByEsInsumo(esInsumo);
-        }
+            return productRepository.findByEsInsumo(esInsumo).stream().map(com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO::fromEntity).toList();
+    }
         return productRepository.findAll();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public java.util.List<LoyaltyTier> getAllLoyaltyTiers() {
-        return tierRepository.findAll();
+    public java.util.List<com.cinezone.demo.dto.LoyaltyTierDTO> getAllLoyaltyTiers() {
+        return tierRepository.findAll().stream().map(com.cinezone.demo.dto.LoyaltyTierDTO::fromEntity).toList();
     }
 
     @Override
     @Transactional
-    public LoyaltyTier updateLoyaltyTier(Long id, Integer maxMonthlyBenefits) {
+    public com.cinezone.demo.dto.LoyaltyTierDTO updateLoyaltyTier(Long id, Integer maxMonthlyBenefits) {
         LoyaltyTier tier = tierRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Nivel no encontrado"));
         tier.setMaxMonthlyBenefits(maxMonthlyBenefits);
-        return tierRepository.save(tier);
+        return com.cinezone.demo.dto.LoyaltyTierDTO.fromEntity(tierRepository.save(tier));
     }
 
     @Override

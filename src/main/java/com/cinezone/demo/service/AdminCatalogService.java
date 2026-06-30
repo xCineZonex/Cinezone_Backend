@@ -5,7 +5,7 @@ import com.cinezone.demo.model.entity.*;
 
 public interface AdminCatalogService {
     com.cinezone.demo.dto.MovieDTO createMovie(MovieCreateDTO request);
-    Cinema createCinema(CinemaCreateDTO request);
+    com.cinezone.demo.dto.CinemaDTO createCinema(CinemaCreateDTO request);
     com.cinezone.demo.dto.AuditoriumDTO createAuditoriumWithSeats(AuditoriumCreateDTO request);
     com.cinezone.demo.dto.ShowtimeDTO createShowtime(ShowtimeCreateDTO request);
     com.cinezone.demo.dto.MovieDTO changeMovieStatus(Long id, String estado);
@@ -13,33 +13,33 @@ public interface AdminCatalogService {
     void removeMovieDistribution(Long movieId, Long sedeId);
     java.util.List<com.cinezone.demo.dto.MovieDTO> getMoviesBySede(Long sedeId);
     com.cinezone.demo.dto.AuditoriumDTO toggleAuditoriumMaintenance(Long auditoriumId, boolean enMantenimiento);
-    Product createProduct(com.cinezone.demo.dto.AdminCatalogDTOs.ProductCreateDTO request);
+    com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO createProduct(com.cinezone.demo.dto.AdminCatalogDTOs.ProductCreateDTO request);
 
     // Métodos de Actualización
     com.cinezone.demo.dto.MovieDTO updateMovie(Long id, MovieUpdateDTO request);
-    Cinema updateCinema(Long id, CinemaUpdateDTO request);
+    com.cinezone.demo.dto.CinemaDTO updateCinema(Long id, CinemaUpdateDTO request);
     com.cinezone.demo.dto.AuditoriumDTO updateAuditorium(Long id, AuditoriumUpdateDTO request);
     com.cinezone.demo.dto.ShowtimeDTO updateShowtime(Long id, ShowtimeUpdateDTO request);
     void deleteShowtime(Long id);
-    Seat updateSeat(Long id, SeatUpdateDTO request);
-    Seat toggleSeatMaintenance(Long id, boolean estado);
-    Product updateProduct(Long id, ProductUpdateDTO request);
+    com.cinezone.demo.dto.SeatDTO updateSeat(Long id, SeatUpdateDTO request);
+    com.cinezone.demo.dto.SeatDTO toggleSeatMaintenance(Long id, boolean estado);
+    com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO updateProduct(Long id, ProductUpdateDTO request);
     void deleteProduct(Long id);
-    Product toggleProductAvailability(Long id, boolean disponible);
-    LoyaltyTier updateLoyaltyTier(Long id, Integer maxMonthlyBenefits);
+    com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO toggleProductAvailability(Long id, boolean disponible);
+    com.cinezone.demo.dto.LoyaltyTierDTO updateLoyaltyTier(Long id, Integer maxMonthlyBenefits);
 
     // Endpoints de lectura para el Admin Dashboard
     java.util.List<com.cinezone.demo.dto.MovieDTO> getAllMovies();
     java.util.List<com.cinezone.demo.dto.ShowtimeDTO> getAllShowtimes();
-    java.util.List<Cinema> getAllCinemas();
+    java.util.List<com.cinezone.demo.dto.CinemaDTO> getAllCinemas();
     java.util.List<com.cinezone.demo.dto.AuditoriumDTO> getAuditoriumsByCinema(Long cinemaId);
-    java.util.List<Product> getAllProductsAdmin(Boolean esInsumo);
-    java.util.List<LoyaltyTier> getAllLoyaltyTiers();
+    java.util.List<com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO> getAllProductsAdmin(Boolean esInsumo);
+    java.util.List<com.cinezone.demo.dto.LoyaltyTierDTO> getAllLoyaltyTiers();
 
     // Editor de lienzo interactivo
     com.cinezone.demo.dto.AuditoriumDTO saveAuditoriumLayout(AuditoriumLayoutDTO request);
     com.cinezone.demo.dto.AuditoriumDTO updateAuditoriumLayout(Long auditoriumId, AuditoriumLayoutDTO request);
-    java.util.List<Seat> getAuditoriumSeats(Long auditoriumId);
+    java.util.List<com.cinezone.demo.dto.SeatDTO> getAuditoriumSeats(Long auditoriumId);
 
     // Combos y Recetas
     void defineComboRecipe(ComboRecipeDTO request);

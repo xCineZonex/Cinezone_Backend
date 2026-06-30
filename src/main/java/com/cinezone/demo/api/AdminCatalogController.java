@@ -17,7 +17,7 @@ public class AdminCatalogController {
     private final AdminCatalogService catalogService;
 
     @GetMapping("/niveles-fidelidad")
-    public ResponseEntity<List<LoyaltyTier>> getLoyaltyTiers() {
+    public ResponseEntity<List<com.cinezone.demo.dto.LoyaltyTierDTO>> getLoyaltyTiers() {
         return ResponseEntity.ok(catalogService.getAllLoyaltyTiers());
     }
 
@@ -47,12 +47,12 @@ public class AdminCatalogController {
     }
 
     @PutMapping("/productos/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody ProductUpdateDTO request) {
+    public ResponseEntity<com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO> updateProduct(@PathVariable Long id, @RequestBody ProductUpdateDTO request) {
         return ResponseEntity.ok(catalogService.updateProduct(id, request));
     }
 
     @PatchMapping("/productos/{id}/estado")
-    public ResponseEntity<Product> toggleProductStatus(@PathVariable Long id, @RequestParam boolean disponible) {
+    public ResponseEntity<com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO> toggleProductStatus(@PathVariable Long id, @RequestParam boolean disponible) {
         return ResponseEntity.ok(catalogService.toggleProductAvailability(id, disponible));
     }
 
@@ -90,17 +90,17 @@ public class AdminCatalogController {
     }
 
     @GetMapping("/sedes")
-    public ResponseEntity<List<Cinema>> getAllSedes() {
+    public ResponseEntity<List<com.cinezone.demo.dto.CinemaDTO>> getAllSedes() {
         return ResponseEntity.ok(catalogService.getAllCinemas());
     }
 
     @PostMapping("/sedes")
-    public ResponseEntity<Cinema> createSede(@RequestBody CinemaCreateDTO request) {
+    public ResponseEntity<com.cinezone.demo.dto.CinemaDTO> createSede(@RequestBody CinemaCreateDTO request) {
         return ResponseEntity.ok(catalogService.createCinema(request));
     }
 
     @PutMapping("/sedes/{id}")
-    public ResponseEntity<Cinema> updateSede(@PathVariable Long id, @RequestBody CinemaUpdateDTO request) {
+    public ResponseEntity<com.cinezone.demo.dto.CinemaDTO> updateSede(@PathVariable Long id, @RequestBody CinemaUpdateDTO request) {
         return ResponseEntity.ok(catalogService.updateCinema(id, request));
     }
 
@@ -168,7 +168,7 @@ public class AdminCatalogController {
     }
 
     @GetMapping("/salas/{auditoriumId}/asientos")
-    public ResponseEntity<List<Seat>> getAuditoriumSeats(@PathVariable Long auditoriumId) {
+    public ResponseEntity<List<com.cinezone.demo.dto.SeatDTO>> getAuditoriumSeats(@PathVariable Long auditoriumId) {
         return ResponseEntity.ok(catalogService.getAuditoriumSeats(auditoriumId));
     }
 

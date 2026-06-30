@@ -55,8 +55,19 @@ public class AdminCatalogDTOs {
             Boolean disponible,
             Boolean esInsumo,
             String imagen,
-            Long requiredTierId
-    ) {}
+            Long requiredTierId,
+            Long cinemaId
+    ) {
+        public static ProductDTO fromEntity(com.cinezone.demo.model.entity.Product p) {
+            if (p == null) return null;
+            return new ProductDTO(
+                p.getId(), p.getNombre(), p.getDescripcion(), p.getPrecio(), p.getPrecioPuntos(),
+                p.getCategoria(), p.getDisponible(), p.getEsInsumo(), p.getImagen(),
+                p.getRequiredTier() != null ? p.getRequiredTier().getId() : null,
+                p.getCinema() != null ? p.getCinema().getId() : null
+            );
+        }
+    }
 
     public record ProductStockDTO(
             Long id,

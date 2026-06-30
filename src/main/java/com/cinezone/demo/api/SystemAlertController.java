@@ -118,7 +118,7 @@ public class SystemAlertController {
     }
 
     @PostMapping("/restock")
-    public ResponseEntity<ReplacementRequest> requestRestock(
+    public ResponseEntity<com.cinezone.demo.dto.ReplacementRequestDTO> requestRestock(
             @org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User currentUser,
             @RequestBody Map<String, Object> payload) {
         
@@ -146,11 +146,11 @@ public class SystemAlertController {
         alert.setReplacementRequestId(req.getId());
         systemAlertRepository.save(alert);
         
-        return ResponseEntity.ok(req);
+        return ResponseEntity.ok(com.cinezone.demo.dto.ReplacementRequestDTO.fromEntity(req));
     }
 
     @PutMapping("/replacements/{id}/status")
-    public ResponseEntity<ReplacementRequest> updateRestockStatus(
+    public ResponseEntity<com.cinezone.demo.dto.ReplacementRequestDTO> updateRestockStatus(
             @org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User currentUser,
             @PathVariable Long id, 
             @RequestBody Map<String, String> payload) {
@@ -187,6 +187,6 @@ public class SystemAlertController {
             }
         }
         
-        return ResponseEntity.ok(req);
+        return ResponseEntity.ok(com.cinezone.demo.dto.ReplacementRequestDTO.fromEntity(req));
     }
 }

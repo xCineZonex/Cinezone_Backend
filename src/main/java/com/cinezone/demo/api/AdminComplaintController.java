@@ -12,24 +12,20 @@ import java.util.List;
 @RequestMapping("/api/v1/admin/reclamos")
 @RequiredArgsConstructor
 public class AdminComplaintController {
-    private final ComplaintRepository complaintRepository;
+    private final com.cinezone.demo.service.ComplaintService complaintService;
 
     @GetMapping
-    public ResponseEntity<List<Complaint>> getAllComplaints() {
-        return ResponseEntity.ok(complaintRepository.findAll());
+    public ResponseEntity<List<com.cinezone.demo.dto.ComplaintDTO>> getAllComplaints() {
+        return ResponseEntity.ok(complaintService.getAllComplaints());
     }
 
     @GetMapping("/sede/{sedeId}")
-    public ResponseEntity<List<Complaint>> getComplaintsBySede(@PathVariable Long sedeId) {
-        return ResponseEntity.ok(complaintRepository.findAllBySedeId(sedeId));
+    public ResponseEntity<List<com.cinezone.demo.dto.ComplaintDTO>> getComplaintsBySede(@PathVariable Long sedeId) {
+        return ResponseEntity.ok(complaintService.getComplaintsBySede(sedeId));
     }
 
     @PutMapping("/{id}/responder")
-    public ResponseEntity<Complaint> responderReclamo(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
-        Complaint complaint = complaintRepository.findById(id).orElseThrow(() -> new RuntimeException("Complaint not found"));
-        complaint.setEstado("RESUELTO");
-        complaint.setRespuestaAdmin(body.get("respuestaAdmin"));
-        complaint.setFechaRespuesta(java.time.LocalDateTime.now());
-        return ResponseEntity.ok(complaintRepository.save(complaint));
+    public ResponseEntity<com.cinezone.demo.dto.ComplaintDTO> responderReclamo(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
+        return ResponseEntity.ok(complaintService.responderReclamo(id, body.get("respuestaAdmin")));
     }
 }

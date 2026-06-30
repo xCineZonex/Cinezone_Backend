@@ -6,4 +6,15 @@ public record CinemaDTO(
         String direccion,
         String ciudad,
         String imagen
-) {}
+) {
+    public static CinemaDTO fromEntity(com.cinezone.demo.model.entity.Cinema c) {
+        if (c == null) return null;
+        return new CinemaDTO(
+                c.getId(),
+                c.getNombre(),
+                c.getDireccion(),
+                c.getCiudad(),
+                c.getImagen()
+        );
+    }
+}
