@@ -220,25 +220,41 @@ public class JefeSalaController {
     }
 
     @PostMapping("/precios-entradas")
-    public ResponseEntity<Map<String, Object>> updatePrecioSede(@RequestBody TicketTypeSedePrice request) {
+    public ResponseEntity<Map<String, Object>> updatePrecioSede(@RequestBody com.cinezone.demo.dto.UpdateSedePriceRequestDTO request) {
         Optional<TicketTypeSedePrice> existingOpt = ticketTypeSedePriceRepository.findByCinemaIdAndTicketBasePriceId(
-            request.getCinema().getId(), request.getTicketBasePrice().getId());
+            request.sedeId(), request.basePriceId());
         
         TicketTypeSedePrice saved;
         if (existingOpt.isPresent()) {
             TicketTypeSedePrice existing = existingOpt.get();
-            if (request.getLocalPrice() != null) existing.setLocalPrice(request.getLocalPrice());
-            if (request.getIsActive() != null) existing.setIsActive(request.getIsActive());
-            existing.setPriceMonday(request.getPriceMonday());
-            existing.setPriceTuesday(request.getPriceTuesday());
-            existing.setPriceWednesday(request.getPriceWednesday());
-            existing.setPriceThursday(request.getPriceThursday());
-            existing.setPriceFriday(request.getPriceFriday());
-            existing.setPriceSaturday(request.getPriceSaturday());
-            existing.setPriceSunday(request.getPriceSunday());
+            if (request.localPrice() != null) existing.setLocalPrice(request.localPrice());
+            if (request.isActive() != null) existing.setIsActive(request.isActive());
+            existing.setPriceMonday(request.priceMonday());
+            existing.setPriceTuesday(request.priceTuesday());
+            existing.setPriceWednesday(request.priceWednesday());
+            existing.setPriceThursday(request.priceThursday());
+            existing.setPriceFriday(request.priceFriday());
+            existing.setPriceSaturday(request.priceSaturday());
+            existing.setPriceSunday(request.priceSunday());
             saved = ticketTypeSedePriceRepository.save(existing);
         } else {
-            saved = ticketTypeSedePriceRepository.save(request);
+            TicketTypeSedePrice newPrice = new TicketTypeSedePrice();
+            Cinema cinema = new Cinema();
+            cinema.setId(request.sedeId());
+            newPrice.setCinema(cinema);
+            TicketBasePrice basePrice = new TicketBasePrice();
+            basePrice.setId(request.basePriceId());
+            newPrice.setTicketBasePrice(basePrice);
+            newPrice.setLocalPrice(request.localPrice());
+            newPrice.setIsActive(request.isActive() != null ? request.isActive() : true);
+            newPrice.setPriceMonday(request.priceMonday());
+            newPrice.setPriceTuesday(request.priceTuesday());
+            newPrice.setPriceWednesday(request.priceWednesday());
+            newPrice.setPriceThursday(request.priceThursday());
+            newPrice.setPriceFriday(request.priceFriday());
+            newPrice.setPriceSaturday(request.priceSaturday());
+            newPrice.setPriceSunday(request.priceSunday());
+            saved = ticketTypeSedePriceRepository.save(newPrice);
         }
         return ResponseEntity.ok(Map.of("id", saved.getId(), "localPrice", saved.getLocalPrice(), "isActive", saved.getIsActive()));
     }

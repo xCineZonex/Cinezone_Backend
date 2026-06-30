@@ -1,6 +1,6 @@
 package com.cinezone.demo.api;
 
-import com.cinezone.demo.model.entity.User;
+import com.cinezone.demo.dto.EvaluateTierRequestDTO;
 import com.cinezone.demo.service.LoyaltyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,23 +12,9 @@ import org.springframework.web.bind.annotation.*;
 public class LoyaltyController {
     private final LoyaltyService service;
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<java.util.Map<String, String>> handleException(Exception e) {
-        e.printStackTrace();
-        java.util.Map<String, String> body = new java.util.HashMap<>();
-        body.put("error", e.getMessage());
-        if (e.getCause() != null) {
-            body.put("cause", e.getCause().getMessage());
-            if (e.getCause().getCause() != null) {
-                body.put("rootCause", e.getCause().getCause().getMessage());
-            }
-        }
-        return ResponseEntity.status(500).body(body);
-    }
-
     @PostMapping("/evaluate-tier")
-    public ResponseEntity<Void> evaluateTierUpgrade(@RequestBody User user) {
-        service.evaluateTierUpgrade(user);
+    public ResponseEntity<Void> evaluateTierUpgrade(@RequestBody EvaluateTierRequestDTO request) {
+        service.evaluateTierUpgradeById(request.userId());
         return ResponseEntity.ok().build();
     }
 

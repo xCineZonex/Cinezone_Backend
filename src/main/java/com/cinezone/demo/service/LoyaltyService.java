@@ -20,6 +20,10 @@ public class LoyaltyService {
     private final com.cinezone.demo.repository.TicketBenefitRepository ticketBenefitRepository;
     private final TicketBasePriceRepository ticketBasePriceRepository;
 
+    public void evaluateTierUpgradeById(java.util.UUID userId) {
+        userRepository.findById(userId).ifPresent(this::evaluateTierUpgrade);
+    }
+
     public void evaluateTierUpgrade(User user) {
         if (!user.getEsSocio()) return; 
 

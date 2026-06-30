@@ -788,7 +788,41 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional
-    public TicketBasePrice saveTicketBasePrice(TicketBasePrice request) {
-        return ticketBasePriceRepository.save(request);
+    public com.cinezone.demo.dto.TicketBasePriceDTO saveTicketBasePrice(com.cinezone.demo.dto.CreateTicketBasePriceRequestDTO request) {
+        TicketBasePrice entity;
+        if (request.id() != null) {
+            entity = ticketBasePriceRepository.findById(request.id())
+                    .orElseThrow(() -> new RuntimeException("Precio base no encontrado"));
+            entity.setName(request.name());
+            entity.setTicketType(com.cinezone.demo.model.enums.TicketType.valueOf(request.ticketType()));
+            entity.setFormato(request.formato());
+            entity.setBasePrice(request.basePrice());
+            if (request.isActive() != null) entity.setIsActive(request.isActive());
+        } else {
+            entity = new TicketBasePrice();
+            entity.setName(request.name());
+            entity.setTicketType(com.cinezone.demo.model.enums.TicketType.valueOf(request.ticketType()));
+            entity.setFormato(request.formato());
+            entity.setBasePrice(request.basePrice());
+            entity.setIsActive(request.isActive() != null ? request.isActive() : true);
+        }
+        TicketBasePrice saved = ticketBasePriceRepository.save(entity);
+        return new com.cinezone.demo.dto.TicketBasePriceDTO(
+                saved.getId(),
+                saved.getTicketType() != null ? saved.getTicketType().name() : null,
+                saved.getFormato(),
+                saved.getName(),
+                saved.getBasePrice(),
+                saved.getIsActive(),
+                saved.getBeneficio() != null ? saved.getBeneficio().getId() : null,
+                saved.getBeneficio() != null ? saved.getBeneficio().getName() : null,
+                saved.getPriceMonday(),
+                saved.getPriceTuesday(),
+                saved.getPriceWednesday(),
+                saved.getPriceThursday(),
+                saved.getPriceFriday(),
+                saved.getPriceSaturday(),
+                saved.getPriceSunday()
+        );
     }
 }

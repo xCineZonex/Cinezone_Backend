@@ -203,7 +203,7 @@ public class AdminCatalogController {
     }
 
     @PostMapping("/tipos-entrada")
-    public ResponseEntity<TicketBasePrice> createOrUpdateTicketBasePrice(@RequestBody TicketBasePrice request) {
+    public ResponseEntity<com.cinezone.demo.dto.TicketBasePriceDTO> createOrUpdateTicketBasePrice(@RequestBody com.cinezone.demo.dto.CreateTicketBasePriceRequestDTO request) {
         return ResponseEntity.ok(catalogService.saveTicketBasePrice(request));
     }
 }
