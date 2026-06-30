@@ -2,8 +2,10 @@ package com.cinezone.demo.service;
 
 import com.cinezone.demo.model.entity.LoyaltyTier;
 import com.cinezone.demo.model.entity.User;
+import com.cinezone.demo.model.entity.TicketBasePrice;
 import com.cinezone.demo.repository.LoyaltyTierRepository;
 import com.cinezone.demo.repository.UserRepository;
+import com.cinezone.demo.repository.TicketBasePriceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,7 @@ public class LoyaltyService {
     private final LoyaltyTierRepository tierRepository;
     private final UserRepository userRepository;
     private final com.cinezone.demo.repository.TicketBenefitRepository ticketBenefitRepository;
+    private final TicketBasePriceRepository ticketBasePriceRepository;
 
     public void evaluateTierUpgrade(User user) {
         if (!user.getEsSocio()) return; 
@@ -45,6 +48,20 @@ public class LoyaltyService {
     }
     
     public com.cinezone.demo.model.entity.TicketBenefit createBeneficio(com.cinezone.demo.model.entity.TicketBenefit b) {
+        b = ticketBenefitRepository.save(b);
+        
+        TicketBasePrice tbp = new TicketBasePrice();
+        String tierName = b.getRequiredTier() != null && b.getRequiredTier().getId() != null ? 
+            tierRepository.findById(b.getRequiredTier().getId()).map(LoyaltyTier::getName).orElse("") : "";
+            
+        tbp.setName(b.getName() + (tierName.isEmpty() ? "" : " (" + tierName + ")"));
+        tbp.setTicketType(com.cinezone.demo.model.enums.TicketType.BENEFICIO);
+        tbp.setFormato("FORMAT_2D");
+        tbp.setBasePrice(b.getPrice());
+        tbp.setIsActive(true);
+        tbp = ticketBasePriceRepository.save(tbp);
+        
+        b.setTicketBasePriceId(tbp.getId());
         return ticketBenefitRepository.save(b);
     }
     
@@ -57,9 +74,36 @@ public class LoyaltyService {
         existing.setRequiredTier(b.getRequiredTier());
         existing.setMonthlyLimit(b.getMonthlyLimit());
         ticketBenefitRepository.save(existing);
+        
+        String tierName = existing.getRequiredTier() != null && existing.getRequiredTier().getId() != null ? 
+            tierRepository.findById(existing.getRequiredTier().getId()).map(LoyaltyTier::getName).orElse("") : "";
+            
+        if (existing.getTicketBasePriceId() != null) {
+            TicketBasePrice tbp = ticketBasePriceRepository.findById(existing.getTicketBasePriceId()).orElse(null);
+            if (tbp != null) {
+                tbp.setName(existing.getName() + (tierName.isEmpty() ? "" : " (" + tierName + ")"));
+                tbp.setBasePrice(existing.getPrice());
+                ticketBasePriceRepository.save(tbp);
+            }
+        } else {
+            TicketBasePrice tbp = new TicketBasePrice();
+            tbp.setName(existing.getName() + (tierName.isEmpty() ? "" : " (" + tierName + ")"));
+            tbp.setTicketType(com.cinezone.demo.model.enums.TicketType.BENEFICIO);
+            tbp.setFormato("FORMAT_2D");
+            tbp.setBasePrice(existing.getPrice());
+            tbp.setIsActive(true);
+            tbp = ticketBasePriceRepository.save(tbp);
+            existing.setTicketBasePriceId(tbp.getId());
+            ticketBenefitRepository.save(existing);
+        }
     }
     
     public void deleteBeneficio(Long id) {
-        ticketBenefitRepository.deleteById(id);
+        ticketBenefitRepository.findById(id).ifPresent(benefit -> {
+            if (benefit.getTicketBasePriceId() != null) {
+                ticketBasePriceRepository.deleteById(benefit.getTicketBasePriceId());
+            }
+            ticketBenefitRepository.deleteById(id);
+        });
     }
 }
