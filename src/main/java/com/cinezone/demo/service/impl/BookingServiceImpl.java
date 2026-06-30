@@ -41,6 +41,7 @@ public class BookingServiceImpl implements BookingService {
     private final TicketTypeSedePriceRepository ticketTypeSedePriceRepository;
     private final com.cinezone.demo.service.EmailService emailService;
     private final com.cinezone.demo.repository.TicketBenefitRepository ticketBenefitRepository;
+    private final com.cinezone.demo.repository.BenefitMonthlyUsageRepository benefitMonthlyUsageRepository;
 
     // Métodos delegados para cálculo dinámico
 
@@ -142,6 +143,51 @@ public class BookingServiceImpl implements BookingService {
         }
         
         BigDecimal finalTotal = expectedTotal; // Priorizamos el cálculo del servidor
+
+        // 4.5. VALIDACIÓN PESIMISTA DE LÍMITE MENSUAL DE BENEFICIOS
+        if (hasTickets) {
+            java.util.Map<Long, Integer> benefitUsageReq = new java.util.HashMap<>();
+            for (var seatReq : request.asientos()) {
+                if (seatReq.beneficioId() != null) {
+                    benefitUsageReq.merge(seatReq.beneficioId(), 1, Integer::sum);
+                }
+            }
+            if (!benefitUsageReq.isEmpty()) {
+                java.time.LocalDateTime now = java.time.LocalDateTime.now();
+                int currentMonth = now.getMonthValue();
+                int currentYear = now.getYear();
+                for (java.util.Map.Entry<Long, Integer> entry : benefitUsageReq.entrySet()) {
+                    Long benId = entry.getKey();
+                    Integer requestedCount = entry.getValue();
+                    com.cinezone.demo.model.entity.TicketBenefit ben = ticketBenefitRepository.findById(benId).orElse(null);
+                    if (ben != null && ben.getMonthlyLimit() != null && ben.getMonthlyLimit() > 0) {
+                        com.cinezone.demo.model.entity.BenefitMonthlyUsage usage;
+                        try {
+                            usage = benefitMonthlyUsageRepository.findForUpdate(buyerUser.getId(), benId, currentMonth, currentYear)
+                                .orElseGet(() -> benefitMonthlyUsageRepository.saveAndFlush(
+                                    com.cinezone.demo.model.entity.BenefitMonthlyUsage.builder()
+                                        .user(buyerUser)
+                                        .benefit(ben)
+                                        .mes(currentMonth)
+                                        .anio(currentYear)
+                                        .usos(0)
+                                        .build()
+                                ));
+                        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                            usage = benefitMonthlyUsageRepository.findForUpdate(buyerUser.getId(), benId, currentMonth, currentYear)
+                                .orElseThrow(() -> new RuntimeException("Error de concurrencia al procesar beneficio"));
+                        }
+                        if (usage.getUsos() + requestedCount > ben.getMonthlyLimit()) {
+                            throw new com.cinezone.demo.exception.BenefitMonthlyLimitExceededException(
+                                "Límite mensual excedido para el beneficio: " + ben.getName()
+                            );
+                        }
+                        usage.setUsos(usage.getUsos() + requestedCount);
+                        benefitMonthlyUsageRepository.save(usage);
+                    }
+                }
+            }
+        }
 
         // 5. CREAR LA BOLETA (CABECERA)
         Booking booking = Booking.builder()
