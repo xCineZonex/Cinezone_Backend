@@ -56,7 +56,7 @@ public class LoyaltyService {
             
         tbp.setName(b.getName() + (tierName.isEmpty() ? "" : " (" + tierName + ")"));
         tbp.setTicketType(com.cinezone.demo.model.enums.TicketType.BENEFICIO);
-        tbp.setFormato("FORMAT_2D");
+        tbp.setFormato("BENEFICIO_" + b.getId());
         tbp.setBasePrice(b.getPrice());
         tbp.setIsActive(true);
         tbp = ticketBasePriceRepository.save(tbp);
@@ -89,7 +89,7 @@ public class LoyaltyService {
             TicketBasePrice tbp = new TicketBasePrice();
             tbp.setName(existing.getName() + (tierName.isEmpty() ? "" : " (" + tierName + ")"));
             tbp.setTicketType(com.cinezone.demo.model.enums.TicketType.BENEFICIO);
-            tbp.setFormato("FORMAT_2D");
+            tbp.setFormato("BENEFICIO_" + existing.getId());
             tbp.setBasePrice(existing.getPrice());
             tbp.setIsActive(true);
             tbp = ticketBasePriceRepository.save(tbp);
