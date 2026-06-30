@@ -173,7 +173,7 @@ public class DashboardServiceImpl implements DashboardService {
     @Transactional(readOnly = true)
     public Map<String, Object> getAdminSedeTotp(@org.springframework.security.core.annotation.AuthenticationPrincipal User currentUser) {
 
-        if (currentUser == null || currentUser.getSedes().isEmpty()) return ResponseEntity.badRequest().build();
+        if (currentUser == null || currentUser.getSedes().isEmpty()) throw new IllegalArgumentException("Invalid user or sedes");
         Long sedeId = currentUser.getSedes().iterator().next().getId();
         return generateValidTotp(sedeId);
     }
@@ -182,7 +182,7 @@ public class DashboardServiceImpl implements DashboardService {
     @Transactional(readOnly = true)
     public Map<String, Object> getTotp(@org.springframework.security.core.annotation.AuthenticationPrincipal User currentUser) {
 
-        if (currentUser == null || currentUser.getSedes().isEmpty()) return ResponseEntity.badRequest().build();
+        if (currentUser == null || currentUser.getSedes().isEmpty()) throw new IllegalArgumentException("Invalid user or sedes");
         Long sedeId = currentUser.getSedes().iterator().next().getId();
         return generateValidTotp(sedeId);
     }
@@ -283,6 +283,15 @@ public class DashboardServiceImpl implements DashboardService {
             "reportado", reportado,
             "atendiendo", List.of(),
             "resuelto", List.of()
+        );
+    }
+    private Map<String, Object> generateValidTotp(Long sedeId) {
+        String formattedCode = cancellationAuthService.generateCodeForSede(sedeId);
+        long secondsRemaining = 60 - ((System.currentTimeMillis() / 1000) % 60);
+        return Map.of(
+            "codigo", formattedCode,
+            "codigoFormateado", formattedCode,
+            "segundosRestantes", secondsRemaining
         );
     }
 }

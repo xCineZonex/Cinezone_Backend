@@ -77,12 +77,12 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional
-    public Cinema createCinema(CinemaCreateDTO request) {
+    public com.cinezone.demo.dto.CinemaDTO createCinema(CinemaCreateDTO request) {
         Cinema cinema = Cinema.builder()
                 .nombre(request.nombre()).direccion(request.direccion())
                 .ciudad(request.ciudad()).imagen(request.imagen()).activa(true)
                 .build();
-        return cinemaRepository.save(cinema);
+        return com.cinezone.demo.dto.CinemaDTO.fromEntity(cinemaRepository.save(cinema));
     }
 
     @Override
@@ -321,14 +321,14 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional
-    public Cinema updateCinema(Long id, CinemaUpdateDTO request) {
+    public com.cinezone.demo.dto.CinemaDTO updateCinema(Long id, CinemaUpdateDTO request) {
         Cinema cinema = cinemaRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada"));
         if (request.nombre() != null) cinema.setNombre(request.nombre());
         if (request.direccion() != null) cinema.setDireccion(request.direccion());
         if (request.ciudad() != null) cinema.setCiudad(request.ciudad());
         if (request.imagen() != null) cinema.setImagen(request.imagen());
         if (request.activa() != null) cinema.setActiva(request.activa());
-        return cinemaRepository.save(cinema);
+        return com.cinezone.demo.dto.CinemaDTO.fromEntity(cinemaRepository.save(cinema));
     }
 
     @Override
@@ -434,20 +434,20 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional
-    public Seat updateSeat(Long id, SeatUpdateDTO request) {
+    public com.cinezone.demo.dto.SeatDTO updateSeat(Long id, SeatUpdateDTO request) {
         Seat seat = seatRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Asiento no encontrado"));
         if (request.fila() != null) seat.setFila(request.fila());
         if (request.numero() != null) seat.setNumero(request.numero());
         if (request.tipo() != null) seat.setTipo(request.tipo());
-        return seatRepository.save(seat);
+        return com.cinezone.demo.dto.SeatDTO.fromEntity(seatRepository.save(seat));
     }
 
     @Override
     @Transactional
-    public Seat toggleSeatMaintenance(Long id, boolean estado) {
+    public com.cinezone.demo.dto.SeatDTO toggleSeatMaintenance(Long id, boolean estado) {
         Seat seat = seatRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Asiento no encontrado"));
         seat.setEnMantenimiento(estado);
-        return seatRepository.save(seat);
+        return com.cinezone.demo.dto.SeatDTO.fromEntity(seatRepository.save(seat));
     }
 
     @Override
@@ -572,7 +572,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional
-    public Product updateProduct(Long id, ProductUpdateDTO request) {
+    public com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO updateProduct(Long id, ProductUpdateDTO request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
         product.setNombre(request.nombre());
@@ -627,11 +627,11 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional
-    public Product toggleProductAvailability(Long id, boolean disponible) {
+    public com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO toggleProductAvailability(Long id, boolean disponible) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
         product.setDisponible(disponible);
-        return productRepository.save(product);
+        return com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO.fromEntity(productRepository.save(product));
     }
 
     @Override
@@ -640,7 +640,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         if (esInsumo != null) {
             return productRepository.findByEsInsumo(esInsumo).stream().map(com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO::fromEntity).toList();
     }
-        return productRepository.findAll();
+        return productRepository.findAll().stream().map(com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO::fromEntity).toList();
     }
 
     @Override

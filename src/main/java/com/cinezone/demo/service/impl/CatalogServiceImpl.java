@@ -52,20 +52,7 @@ public class CatalogServiceImpl implements CatalogService {
     }
 
     private MovieDTO mapToDTO(Movie movie) {
-        return new MovieDTO(
-                movie.getId(),
-                movie.getTitulo(),
-                movie.getSinopsis(),
-                movie.getDuracionMinutos(),
-                movie.getGenero(),
-                movie.getClasificacion(),
-                movie.getIdioma(),
-                movie.getPosterUrl(),
-                movie.getTrailerUrl(),
-                movie.getFechaEstreno(),
-                movie.getFechaFinCartelera(),
-                movie.getEstado()
-        );
+        return MovieDTO.fromEntity(movie);
     }
 
     @Override

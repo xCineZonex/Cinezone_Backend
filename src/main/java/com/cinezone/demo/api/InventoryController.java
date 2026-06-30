@@ -34,12 +34,7 @@ public class InventoryController {
         List<com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO> insumos = stocks.stream()
             .map(com.cinezone.demo.model.entity.ProductStock::getProduct)
             .filter(p -> p.getEsInsumo() != null && p.getEsInsumo())
-            .map(p -> new com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO(
-                    p.getId(), p.getNombre(), p.getDescripcion(), p.getPrecio(),
-                    p.getPrecioPuntos(), p.getCategoria(), p.getDisponible(),
-                    p.getEsInsumo(), p.getImagen(),
-                    p.getRequiredTier() != null ? p.getRequiredTier().getId() : null
-            ))
+            .map(com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO::fromEntity)
             .toList();
         return ResponseEntity.ok(insumos);
     }
@@ -69,12 +64,7 @@ public class InventoryController {
         List<com.cinezone.demo.dto.AdminCatalogDTOs.ProductStockDTO> dtos = productStockRepository.findByCinemaId(sedeId).stream()
                 .map(stock -> new com.cinezone.demo.dto.AdminCatalogDTOs.ProductStockDTO(
                         stock.getId(),
-                        new com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO(
-                                stock.getProduct().getId(), stock.getProduct().getNombre(), stock.getProduct().getDescripcion(),
-                                stock.getProduct().getPrecio(), stock.getProduct().getPrecioPuntos(), stock.getProduct().getCategoria(),
-                                stock.getProduct().getDisponible(), stock.getProduct().getEsInsumo(), stock.getProduct().getImagen(),
-                                stock.getProduct().getRequiredTier() != null ? stock.getProduct().getRequiredTier().getId() : null
-                        ),
+                        com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO.fromEntity(stock.getProduct()),
                         stock.getCinema() != null ? stock.getCinema().getId() : null,
                         stock.getStock(),
                         stock.getIsActive(),

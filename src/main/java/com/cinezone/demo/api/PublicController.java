@@ -61,18 +61,9 @@ public class PublicController {
     @GetMapping("/sedes/{sedeId}/peliculas/{movieId}/funciones")
     public ResponseEntity<List<com.cinezone.demo.dto.ShowtimeDTO>> getFuncionesPorSedeYPelicula(@PathVariable Long sedeId, @PathVariable Long movieId) {
         List<com.cinezone.demo.model.entity.Showtime> funciones = showtimeRepository.findByMovieIdAndCinemaIdAndActivaTrueAndFechaHoraAfterOrderByFechaHoraAsc(movieId, sedeId, java.time.LocalDateTime.now());
-        List<com.cinezone.demo.dto.ShowtimeDTO> dtos = funciones.stream().map(s -> new com.cinezone.demo.dto.ShowtimeDTO(
-                s.getId(),
-                s.getMovie().getId(),
-                s.getMovie().getTitulo(),
-                s.getAuditorium().getId(),
-                s.getAuditorium().getNombre(),
-                s.getCinema().getId(),
-                s.getCinema().getNombre(),
-                s.getFechaHora(),
-                s.getIdioma(),
-                s.getFormatoProyeccion()
-        )).collect(Collectors.toList());
+        List<com.cinezone.demo.dto.ShowtimeDTO> dtos = funciones.stream()
+                .map(com.cinezone.demo.dto.ShowtimeDTO::fromEntity)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
 
@@ -143,7 +134,8 @@ public class PublicController {
                                 p.getId(), p.getNombre(), p.getDescripcion(), finalPrice,
                                 p.getPrecioPuntos(), p.getCategoria(), p.getDisponible(),
                                 p.getEsInsumo(), p.getImagen(),
-                                p.getRequiredTier() != null ? p.getRequiredTier().getId() : null
+                                p.getRequiredTier() != null ? p.getRequiredTier().getId() : null,
+                                stock.getCinema() != null ? stock.getCinema().getId() : null
                         );
                     })
                     .collect(Collectors.toList());
@@ -167,12 +159,7 @@ public class PublicController {
             }
 
             dtos = productos.stream()
-                    .map(p -> new com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO(
-                            p.getId(), p.getNombre(), p.getDescripcion(), p.getPrecio(),
-                            p.getPrecioPuntos(), p.getCategoria(), p.getDisponible(),
-                            p.getEsInsumo(), p.getImagen(),
-                            p.getRequiredTier() != null ? p.getRequiredTier().getId() : null
-                    ))
+                    .map(com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO::fromEntity)
                     .collect(Collectors.toList());
         }
 

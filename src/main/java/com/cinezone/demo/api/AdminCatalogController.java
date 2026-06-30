@@ -23,27 +23,12 @@ public class AdminCatalogController {
 
     @GetMapping("/productos")
     public ResponseEntity<List<ProductDTO>> getProducts(@RequestParam(required = false) Boolean esInsumo) {
-        List<ProductDTO> dtos = catalogService.getAllProductsAdmin(esInsumo).stream()
-                .map(p -> new ProductDTO(
-                        p.getId(), p.getNombre(), p.getDescripcion(), p.getPrecio(),
-                        p.getPrecioPuntos(), p.getCategoria(), p.getDisponible(),
-                        p.getEsInsumo(), p.getImagen(),
-                        p.getRequiredTier() != null ? p.getRequiredTier().getId() : null
-                ))
-                .toList();
-        return ResponseEntity.ok(dtos);
+        return ResponseEntity.ok(catalogService.getAllProductsAdmin(esInsumo));
     }
 
     @PostMapping("/productos")
     public ResponseEntity<ProductDTO> createProduct(@RequestBody ProductCreateDTO request) {
-        Product p = catalogService.createProduct(request);
-        ProductDTO dto = new ProductDTO(
-            p.getId(), p.getNombre(), p.getDescripcion(), p.getPrecio(),
-            p.getPrecioPuntos(), p.getCategoria(), p.getDisponible(),
-            p.getEsInsumo(), p.getImagen(),
-            p.getRequiredTier() != null ? p.getRequiredTier().getId() : null
-        );
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(catalogService.createProduct(request));
     }
 
     @PutMapping("/productos/{id}")

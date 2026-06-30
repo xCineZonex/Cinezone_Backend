@@ -50,15 +50,7 @@ public class DashboardController {
         return ResponseEntity.ok(dashboardService.getTotp(currentUser));
     }
 
-    private ResponseEntity<Map<String, Object>> generateValidTotp(Long sedeId) {
-        String formattedCode = cancellationAuthService.generateCodeForSede(sedeId);
-        long secondsRemaining = 60 - ((System.currentTimeMillis() / 1000) % 60);
-        return ResponseEntity.ok(Map.of(
-            "codigo", formattedCode,
-            "codigoFormateado", formattedCode,
-            "segundosRestantes", secondsRemaining
-        ));
-    }
+
 
     @GetMapping("/admin/dashboard/jefe-sala/semaforo")
     public ResponseEntity<Map<String, Object>> getSemaforoJefeSala(@RequestParam Long sedeId) {
