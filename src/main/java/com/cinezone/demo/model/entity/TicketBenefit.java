@@ -39,6 +39,10 @@ public class TicketBenefit {
     @Column(name = "ticket_base_price_id")
     private Long ticketBasePriceId;
 
+    @Builder.Default
+    @Column(name = "formato", length = 50)
+    private String formato = "TODOS";
+
     public Long getId() {
         return this.id;
     }
@@ -94,5 +98,13 @@ public class TicketBenefit {
 
     public void setTicketBasePriceId(Long ticketBasePriceId) {
         this.ticketBasePriceId = ticketBasePriceId;
+    }
+
+    public String getFormato() {
+        return this.formato;
+    }
+
+    public void setFormato(String formato) {
+        this.formato = formato;
     }
 }

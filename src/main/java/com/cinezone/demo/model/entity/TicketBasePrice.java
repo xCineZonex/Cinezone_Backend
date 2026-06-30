@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "ticket_base_prices_v2", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"ticket_type", "formato"})
+    @UniqueConstraint(columnNames = {"ticket_type", "formato", "beneficio_id"})
 })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class TicketBasePrice {
@@ -33,6 +33,10 @@ public class TicketBasePrice {
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "beneficio_id")
+    private TicketBenefit beneficio;
 
     // Precios dinámicos por día de la semana (Si es null, se usa basePrice)
     @Column(name = "price_monday", precision = 10, scale = 2)

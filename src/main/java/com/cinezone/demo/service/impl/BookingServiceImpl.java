@@ -40,6 +40,7 @@ public class BookingServiceImpl implements BookingService {
     private final TicketBasePriceRepository ticketBasePriceRepository;
     private final TicketTypeSedePriceRepository ticketTypeSedePriceRepository;
     private final com.cinezone.demo.service.EmailService emailService;
+    private final com.cinezone.demo.repository.TicketBenefitRepository ticketBenefitRepository;
 
     // Métodos delegados para cálculo dinámico
 
@@ -167,6 +168,27 @@ public class BookingServiceImpl implements BookingService {
                         .precioPagado(calculateTicketPrice(showtime, seatReq.tipoEntrada()))
                         .beneficioId(seatReq.beneficioId())
                         .build();
+
+                // Seguridad: Validar formato del beneficio
+                if (seatReq.beneficioId() != null) {
+                    com.cinezone.demo.model.entity.TicketBenefit ben = ticketBenefitRepository.findById(seatReq.beneficioId()).orElse(null);
+                    if (ben != null && ben.getFormato() != null && !ben.getFormato().equals("TODOS")) {
+                        // Compatibilidad con "2D" y "FORMAT_2D"
+                        String benFmt = ben.getFormato();
+                        String showFmt = showtime.getFormato();
+                        boolean match = benFmt.equals(showFmt) || 
+                                        (benFmt.equals("2D") && "FORMAT_2D".equals(showFmt)) || 
+                                        (benFmt.equals("FORMAT_2D") && "2D".equals(showFmt)) ||
+                                        (benFmt.equals("3D") && "FORMAT_3D".equals(showFmt)) ||
+                                        (benFmt.equals("FORMAT_3D") && "3D".equals(showFmt));
+                        if (!match) {
+                            throw new com.cinezone.demo.exception.BenefitFormatMismatchException(
+                                "El beneficio '" + ben.getName() + "' solo es válido para formato " + benFmt + " pero la función es " + showFmt
+                            );
+                        }
+                    }
+                }
+
                 ticketRepository.save(ticket);
                 asientosReservados.append(seat.getFila()).append(seat.getNumero()).append(" ");
                 puntosCalculados += 1;

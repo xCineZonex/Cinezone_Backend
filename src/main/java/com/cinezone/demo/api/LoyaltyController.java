@@ -30,6 +30,7 @@ public class LoyaltyController {
             map.put("tierId", b.getRequiredTier().getId());
             map.put("tierName", b.getRequiredTier().getName());
             map.put("monthlyLimit", b.getMonthlyLimit());
+            map.put("formato", b.getFormato());
             return map;
         }).toList();
         return ResponseEntity.ok(response);
@@ -42,6 +43,7 @@ public class LoyaltyController {
         public Integer ticketCount;
         public Long tierId;
         public Integer monthlyLimit;
+        public String formato;
     }
 
     @PostMapping
@@ -55,6 +57,7 @@ public class LoyaltyController {
         tier.setId(request.tierId);
         b.setRequiredTier(tier);
         b.setMonthlyLimit(request.monthlyLimit);
+        b.setFormato(request.formato != null ? request.formato : "TODOS");
         service.createBeneficio(b);
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).build();
     }
@@ -70,6 +73,7 @@ public class LoyaltyController {
         tier.setId(request.tierId);
         b.setRequiredTier(tier);
         b.setMonthlyLimit(request.monthlyLimit);
+        b.setFormato(request.formato != null ? request.formato : "TODOS");
         service.updateBeneficio(id, b);
         return ResponseEntity.ok().build();
     }
