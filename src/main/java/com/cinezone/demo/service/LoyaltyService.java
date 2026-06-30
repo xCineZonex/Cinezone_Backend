@@ -48,6 +48,9 @@ public class LoyaltyService {
     }
     
     public com.cinezone.demo.model.entity.TicketBenefit createBeneficio(com.cinezone.demo.model.entity.TicketBenefit b) {
+        if (b.getRequiredTier() != null && b.getRequiredTier().getId() != null) {
+            b.setRequiredTier(tierRepository.findById(b.getRequiredTier().getId()).orElse(null));
+        }
         b = ticketBenefitRepository.save(b);
         
         TicketBasePrice tbp = new TicketBasePrice();
@@ -73,7 +76,11 @@ public class LoyaltyService {
         existing.setPrice(b.getPrice());
         existing.setPointsRequired(b.getPointsRequired());
         existing.setTicketCount(b.getTicketCount());
-        existing.setRequiredTier(b.getRequiredTier());
+        if (b.getRequiredTier() != null && b.getRequiredTier().getId() != null) {
+            existing.setRequiredTier(tierRepository.findById(b.getRequiredTier().getId()).orElse(null));
+        } else {
+            existing.setRequiredTier(b.getRequiredTier());
+        }
         existing.setMonthlyLimit(b.getMonthlyLimit());
         existing.setFormato(b.getFormato());
         ticketBenefitRepository.save(existing);
