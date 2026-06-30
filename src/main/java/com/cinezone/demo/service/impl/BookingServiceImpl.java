@@ -303,8 +303,18 @@ public class BookingServiceImpl implements BookingService {
 
         for (TicketBasePrice base : basePrices) {
             if (!base.getIsActive()) continue;
+            // Excluir BENEFICIO para que no aparezca en "Entradas Generales"
+            if (base.getTicketType() == com.cinezone.demo.model.enums.TicketType.BENEFICIO) continue;
+            
             if (base.getFormato() != null && !base.getFormato().equals("TODOS") && !base.getFormato().equals(formato)) {
-                continue; // Filtrar entradas por el tipo de formato de la sala
+                // Compatibilidad con "2D" y "FORMAT_2D"
+                if (formato.equals("FORMAT_2D") && base.getFormato().equals("2D")) {
+                    // Permitir
+                } else if (formato.equals("2D") && base.getFormato().equals("FORMAT_2D")) {
+                    // Permitir
+                } else {
+                    continue; // Filtrar entradas por el tipo de formato de la sala
+                }
             }
             BigDecimal finalPrice = calculateTicketPrice(showtime, base.getTicketType());
             result.add(java.util.Map.of(
