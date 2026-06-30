@@ -18,7 +18,8 @@ public record PurchaseRequestDTO(
         
         // Datos para ventas en taquilla
         java.util.UUID clienteId, // ID del cliente si lo buscó la taquilla
-        String metodoPago // EFECTIVO, TARJETA, YAPE, PLIN
+        String metodoPago, // EFECTIVO, TARJETA, YAPE, PLIN
+        String idempotencyKey // Clave única de idempotencia para la transacción
 ) {
     public record SeatPurchaseDTO(
             Long asientoId,

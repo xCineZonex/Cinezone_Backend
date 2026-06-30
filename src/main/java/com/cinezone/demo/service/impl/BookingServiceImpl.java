@@ -42,6 +42,7 @@ public class BookingServiceImpl implements BookingService {
     private final com.cinezone.demo.service.EmailService emailService;
     private final com.cinezone.demo.repository.TicketBenefitRepository ticketBenefitRepository;
     private final com.cinezone.demo.repository.BenefitMonthlyUsageRepository benefitMonthlyUsageRepository;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     // Métodos delegados para cálculo dinámico
 
@@ -49,7 +50,31 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     public PurchaseResponseDTO processPurchase(PurchaseRequestDTO request, User currentUser) {
 
-        // 1. VALIDACIÓN INICIAL: ¿Qué está comprando?
+        String idempKey = request.idempotencyKey();
+        String redisIdempKey = idempKey != null && !idempKey.trim().isEmpty() ? "idemp:" + idempKey : null;
+
+        if (redisIdempKey != null) {
+            String existingVal = (String) redisTemplate.opsForValue().get(redisIdempKey);
+            if (existingVal != null) {
+                if ("PROCESSING".equals(existingVal)) {
+                    throw new BusinessRuleException("Transacción en curso, por favor espere.");
+                } else {
+                    try {
+                        return objectMapper.readValue(existingVal, PurchaseResponseDTO.class);
+                    } catch (Exception e) {
+                        // Si falla el parseo, continuamos normal
+                    }
+                }
+            }
+            // Lock de 1 minuto para evitar doble clic concurrente
+            Boolean isFirst = redisTemplate.opsForValue().setIfAbsent(redisIdempKey, "PROCESSING", 1, java.util.concurrent.TimeUnit.MINUTES);
+            if (Boolean.FALSE.equals(isFirst)) {
+                throw new BusinessRuleException("Transacción en curso concurrente, por favor espere.");
+            }
+        }
+
+        try {
+            // 1. VALIDACIÓN INICIAL: ¿Qué está comprando?
         boolean hasTickets = request.asientos() != null && !request.asientos().isEmpty();
         boolean hasSnacks = request.snacks() != null && !request.snacks().isEmpty();
 
@@ -317,7 +342,7 @@ public class BookingServiceImpl implements BookingService {
                 return new PurchaseResponseDTO.ItemDetailDTO(p != null ? p.getNombre() : "Snack", s.cantidad(), finalPrice);
             }).collect(java.util.stream.Collectors.toList()) : List.of();
 
-        return new PurchaseResponseDTO(
+        PurchaseResponseDTO responseDTO = new PurchaseResponseDTO(
                 booking.getId(),
                 booking.getCodigoUnico(),
                 infoCine,
@@ -334,7 +359,28 @@ public class BookingServiceImpl implements BookingService {
                 entradasDetail,
                 snacksDetail
         );
+
+        // Guardar la respuesta final en Redis si hay idempotencyKey
+        if (redisIdempKey != null) {
+            try {
+                String jsonResponse = objectMapper.writeValueAsString(responseDTO);
+                redisTemplate.opsForValue().set(redisIdempKey, jsonResponse, 24, java.util.concurrent.TimeUnit.HOURS);
+            } catch (Exception e) {
+                System.err.println("Error guardando idempotency key: " + e.getMessage());
+            }
+        }
+
+        return responseDTO;
+    } finally {
+        // En caso de error, liberamos el candado de "PROCESSING" para que pueda reintentar
+        if (redisIdempKey != null) {
+            String currentVal = (String) redisTemplate.opsForValue().get(redisIdempKey);
+            if ("PROCESSING".equals(currentVal)) {
+                redisTemplate.delete(redisIdempKey);
+            }
+        }
     }
+}
 
     @Override
     public void lockSeat(com.cinezone.demo.dto.LockSeatRequestDTO request, User currentUser) {
