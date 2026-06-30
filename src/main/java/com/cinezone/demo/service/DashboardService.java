@@ -3,6 +3,7 @@ package com.cinezone.demo.service;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import com.cinezone.demo.model.entity.User;
 
 public interface DashboardService {
     Map<String, Object> getSuperAdminDashboard();
