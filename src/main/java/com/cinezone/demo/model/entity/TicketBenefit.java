@@ -36,6 +36,9 @@ public class TicketBenefit {
     @Column(name = "limite_mensual")
     private Integer monthlyLimit = 0; // 0 significa sin límite
 
+    @Column(name = "ticket_base_price_id")
+    private Long ticketBasePriceId;
+
     public Long getId() {
         return this.id;
     }
@@ -83,5 +86,13 @@ public class TicketBenefit {
 
     public void setRequiredTier(LoyaltyTier requiredTier) {
         this.requiredTier = requiredTier;
+    }
+
+    public Long getTicketBasePriceId() {
+        return this.ticketBasePriceId;
+    }
+
+    public void setTicketBasePriceId(Long ticketBasePriceId) {
+        this.ticketBasePriceId = ticketBasePriceId;
     }
 }

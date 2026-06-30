@@ -4,8 +4,10 @@ import com.cinezone.demo.dto.TicketBenefitDTO;
 import com.cinezone.demo.exception.ResourceNotFoundException;
 import com.cinezone.demo.model.entity.LoyaltyTier;
 import com.cinezone.demo.model.entity.TicketBenefit;
+import com.cinezone.demo.model.entity.TicketBasePrice;
 import com.cinezone.demo.repository.LoyaltyTierRepository;
 import com.cinezone.demo.repository.TicketBenefitRepository;
+import com.cinezone.demo.repository.TicketBasePriceRepository;
 import com.cinezone.demo.service.TicketBenefitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 public class TicketBenefitServiceImpl implements TicketBenefitService {
     private final TicketBenefitRepository benefitRepository;
     private final LoyaltyTierRepository tierRepository;
+    private final TicketBasePriceRepository ticketBasePriceRepository;
 
     @Override
     public List<TicketBenefitDTO> getAll() {
@@ -40,6 +43,19 @@ public class TicketBenefitServiceImpl implements TicketBenefitService {
                 .requiredTier(tier)
                 .build();
         benefit = benefitRepository.save(benefit);
+
+        // SYNC: Create matching TicketBasePrice
+        TicketBasePrice tbp = new TicketBasePrice();
+        tbp.setName(benefit.getName() + " (" + tier.getName() + ")");
+        tbp.setTicketType(com.cinezone.demo.model.enums.TicketType.BENEFICIO);
+        tbp.setFormato("FORMAT_2D");
+        tbp.setBasePrice(benefit.getPrice());
+        tbp.setIsActive(true);
+        tbp = ticketBasePriceRepository.save(tbp);
+        
+        benefit.setTicketBasePriceId(tbp.getId());
+        benefit = benefitRepository.save(benefit);
+
         return new TicketBenefitDTO(benefit.getId(), benefit.getName(), benefit.getPrice(), benefit.getPointsRequired(), benefit.getTicketCount(), tier.getId(), tier.getName(), benefit.getMonthlyLimit());
     }
 
@@ -58,11 +74,36 @@ public class TicketBenefitServiceImpl implements TicketBenefitService {
         benefit.setRequiredTier(tier);
         
         benefit = benefitRepository.save(benefit);
+
+        // SYNC: Update or create matching TicketBasePrice
+        if (benefit.getTicketBasePriceId() != null) {
+            ticketBasePriceRepository.findById(benefit.getTicketBasePriceId()).ifPresent(tbp -> {
+                tbp.setName(benefit.getName() + " (" + tier.getName() + ")");
+                tbp.setBasePrice(benefit.getPrice());
+                ticketBasePriceRepository.save(tbp);
+            });
+        } else {
+            TicketBasePrice tbp = new TicketBasePrice();
+            tbp.setName(benefit.getName() + " (" + tier.getName() + ")");
+            tbp.setTicketType(com.cinezone.demo.model.enums.TicketType.BENEFICIO);
+            tbp.setFormato("FORMAT_2D");
+            tbp.setBasePrice(benefit.getPrice());
+            tbp.setIsActive(true);
+            tbp = ticketBasePriceRepository.save(tbp);
+            benefit.setTicketBasePriceId(tbp.getId());
+            benefitRepository.save(benefit);
+        }
+
         return new TicketBenefitDTO(benefit.getId(), benefit.getName(), benefit.getPrice(), benefit.getPointsRequired(), benefit.getTicketCount(), tier.getId(), tier.getName(), benefit.getMonthlyLimit());
     }
 
     @Override
     public void delete(Long id) {
-        benefitRepository.deleteById(id);
+        benefitRepository.findById(id).ifPresent(benefit -> {
+            if (benefit.getTicketBasePriceId() != null) {
+                ticketBasePriceRepository.deleteById(benefit.getTicketBasePriceId());
+            }
+            benefitRepository.deleteById(id);
+        });
     }
 }
