@@ -32,7 +32,7 @@ public class ReservationServiceImpl implements ReservationService {
     // Inyectamos Redis (Lo configuraste al inicio en RedisConfig)
     private final RedisTemplate<String, Object> redisTemplate;
 
-    private static final long LOCK_TIME_MINUTES = 10;
+    private static final long LOCK_TIME_MINUTES = 3;
 
     @Override
     @Transactional(readOnly = true)
@@ -101,10 +101,18 @@ public class ReservationServiceImpl implements ReservationService {
         Seat seat = seatRepository.findById(request.asientoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Asiento no encontrado"));
                 
-        return new SeatResponseDTO(
-                seat.getId(), seat.getFila(), seat.getNumero(), seat.getTipo(), "BLOQUEADO_TEMP",
-                seat.getGridRow(), seat.getGridCol()
-        );
+        return mapToDTO(seat);
+    }
+
+    @Override
+    public void renewSeatLockTemporarily(LockSeatRequestDTO request, String userId) {
+        String redisKey = "asiento:" + request.funcionId() + ":" + request.asientoId();
+        String lockOwner = (String) redisTemplate.opsForValue().get(redisKey);
+        
+        // Solo renueva si yo sigo siendo el dueño del candado
+        if (userId.equals(lockOwner)) {
+            redisTemplate.expire(redisKey, LOCK_TIME_MINUTES, java.util.concurrent.TimeUnit.MINUTES);
+        }
     }
 
     @Override

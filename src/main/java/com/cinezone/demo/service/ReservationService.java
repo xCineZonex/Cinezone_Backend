@@ -11,6 +11,9 @@ public interface ReservationService {
     // Intenta bloquear un asiento en Redis
     SeatResponseDTO lockSeatTemporarily(LockSeatRequestDTO request, String userId);
 
+    // Renueva el bloqueo de un asiento en Redis
+    void renewSeatLockTemporarily(LockSeatRequestDTO request, String userId);
+
     // Libera el bloqueo de un asiento en Redis
     void unlockSeat(Long funcionId, Long asientoId, String userId);
 }

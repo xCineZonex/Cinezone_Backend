@@ -26,6 +26,13 @@ public class ReservationController {
         return ResponseEntity.ok(service.lockSeatTemporarily(request, userId));
     }
 
+    @PostMapping("/asientos/heartbeat")
+    public ResponseEntity<Void> renewSeatLock(@RequestBody LockSeatRequestDTO request, @org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User currentUser) {
+        String userId = (currentUser != null && currentUser.getId() != null) ? currentUser.getId().toString() : request.clienteId();
+        service.renewSeatLockTemporarily(request, userId);
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/asientos/unlock")
     public ResponseEntity<Void> unlockSeat(@RequestParam("funcionId") Long funcionId, @RequestParam("asientoId") Long asientoId, @org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User currentUser) {
         String userId = currentUser != null ? currentUser.getId().toString() : "anonymous";
