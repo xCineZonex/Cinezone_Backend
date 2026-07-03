@@ -139,6 +139,9 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         if (movie.getEstado() == com.cinezone.demo.model.enums.MovieStatus.RETIRADA) {
             throw new com.cinezone.demo.exception.BusinessRuleException("No se pueden programar funciones para películas retiradas.");
         }
+        if (movie.getEstado() == com.cinezone.demo.model.enums.MovieStatus.PROXIMAMENTE) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("No se pueden programar funciones para películas en estado 'Próximamente'. Deben pasar a Preventa o En Cartelera primero.");
+        }
 
         // VALIDACIÓN DE FECHA DE ESTRENO
         if (request.fechaHora().toLocalDate().isBefore(movie.getFechaEstreno())) {
@@ -210,9 +213,18 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         // Convertimos el texto (Ej: "RETIRADA") al valor del Enum
         MovieStatus newStatusEnum = MovieStatus.valueOf(newStatus.toUpperCase());
         
-        if (movie.getEstado() == MovieStatus.EN_CARTELERA) {
+        MovieStatus currentStatus = movie.getEstado();
+        if (currentStatus == MovieStatus.EN_CARTELERA) {
             if (newStatusEnum == MovieStatus.PRE_VENTA || newStatusEnum == MovieStatus.PROXIMAMENTE) {
                 throw new com.cinezone.demo.exception.BusinessRuleException("No se puede regresar el estado a PRE_VENTA o PROXIMAMENTE si ya está EN_CARTELERA");
+            }
+        } else if (currentStatus == MovieStatus.RETIRADA) {
+            if (newStatusEnum != MovieStatus.RETIRADA) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("Una película 'RETIRADA' no puede volver a publicarse mediante una edición. El ciclo ha concluido.");
+            }
+        } else if (currentStatus == MovieStatus.PRE_VENTA) {
+            if (newStatusEnum == MovieStatus.PROXIMAMENTE) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("Una película en 'PREVENTA' no puede retroceder a estado 'PRÓXIMAMENTE'.");
             }
         }
         
@@ -327,9 +339,22 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
     public com.cinezone.demo.dto.MovieDTO updateMovie(Long id, MovieUpdateDTO request) {
         Movie movie = movieRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Película no encontrada"));
         
-        if (request.estado() != null && movie.getEstado() == com.cinezone.demo.model.enums.MovieStatus.EN_CARTELERA) {
-            if (request.estado() == com.cinezone.demo.model.enums.MovieStatus.PRE_VENTA || request.estado() == com.cinezone.demo.model.enums.MovieStatus.PROXIMAMENTE) {
-                throw new com.cinezone.demo.exception.BusinessRuleException("Una película 'EN CARTELERA' no puede regresar a estado de Preventa o Próximamente.");
+        if (request.estado() != null) {
+            com.cinezone.demo.model.enums.MovieStatus currentStatus = movie.getEstado();
+            com.cinezone.demo.model.enums.MovieStatus newStatus = request.estado();
+            
+            if (currentStatus == com.cinezone.demo.model.enums.MovieStatus.EN_CARTELERA) {
+                if (newStatus == com.cinezone.demo.model.enums.MovieStatus.PRE_VENTA || newStatus == com.cinezone.demo.model.enums.MovieStatus.PROXIMAMENTE) {
+                    throw new com.cinezone.demo.exception.BusinessRuleException("Una película 'EN CARTELERA' no puede regresar a estado de Preventa o Próximamente.");
+                }
+            } else if (currentStatus == com.cinezone.demo.model.enums.MovieStatus.RETIRADA) {
+                if (newStatus != com.cinezone.demo.model.enums.MovieStatus.RETIRADA) {
+                    throw new com.cinezone.demo.exception.BusinessRuleException("Una película 'RETIRADA' no puede volver a publicarse mediante una edición. El ciclo ha concluido.");
+                }
+            } else if (currentStatus == com.cinezone.demo.model.enums.MovieStatus.PRE_VENTA) {
+                if (newStatus == com.cinezone.demo.model.enums.MovieStatus.PROXIMAMENTE) {
+                    throw new com.cinezone.demo.exception.BusinessRuleException("Una película en 'PREVENTA' no puede retroceder a estado 'PRÓXIMAMENTE'.");
+                }
             }
         }
         
