@@ -6,7 +6,8 @@ import java.time.LocalDateTime;
 public class CashShiftDTOs {
 
     public record OpenShiftRequestDTO(
-            BigDecimal montoApertura
+            BigDecimal montoApertura,
+            String module
     ) {}
 
     public record CloseShiftRequestDTO(
@@ -21,6 +22,7 @@ public class CashShiftDTOs {
             BigDecimal montoEsperado,
             BigDecimal montoDeclarado,
             BigDecimal descuadre,
-            String estado
+            String estado,
+            String modulo
     ) {}
 }

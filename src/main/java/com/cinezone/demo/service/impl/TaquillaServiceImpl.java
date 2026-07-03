@@ -217,13 +217,13 @@ public class TaquillaServiceImpl implements TaquillaService {
     public com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO getEstadoCaja(User currentUser) {
         Optional<com.cinezone.demo.model.entity.CashShift> opt = cashShiftRepository.findTopByUserAndStatusOrderByOpenedAtDesc(currentUser, com.cinezone.demo.model.entity.CashShift.CashShiftStatus.ABIERTA);
         if (opt.isEmpty()) {
-            return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(null, null, null, null, null, null, null, "CERRADA");
+            return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(null, null, null, null, null, null, null, "CERRADA", null);
         }
         var shift = opt.get();
         BigDecimal sales = bookingRepository.sumTotalByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt());
         if (sales == null) sales = BigDecimal.ZERO;
         BigDecimal expected = shift.getOpeningBalance().add(sales);
-        return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(shift.getId(), shift.getOpenedAt(), null, shift.getOpeningBalance(), expected, null, null, "ABIERTA");
+        return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(shift.getId(), shift.getOpenedAt(), null, shift.getOpeningBalance(), expected, null, null, "ABIERTA", shift.getModule());
     }
 
     @Override
@@ -236,9 +236,10 @@ public class TaquillaServiceImpl implements TaquillaService {
                 .user(currentUser)
                 .openingBalance(request.montoApertura())
                 .status(com.cinezone.demo.model.entity.CashShift.CashShiftStatus.ABIERTA)
+                .module(request.module())
                 .build();
         shift = cashShiftRepository.save(shift);
-        return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(shift.getId(), java.time.LocalDateTime.now(), null, shift.getOpeningBalance(), null, null, null, "ABIERTA");
+        return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(shift.getId(), java.time.LocalDateTime.now(), null, shift.getOpeningBalance(), null, null, null, "ABIERTA", shift.getModule());
     }
 
     @Override
@@ -251,17 +252,16 @@ public class TaquillaServiceImpl implements TaquillaService {
         if (sales == null) sales = BigDecimal.ZERO;
         
         BigDecimal expected = shift.getOpeningBalance().add(sales);
-        BigDecimal actual = request.montoDeclarado();
-        BigDecimal diff = actual.subtract(expected);
+        BigDecimal difference = request.montoDeclarado().subtract(expected);
         
-        shift.setClosedAt(java.time.LocalDateTime.now());
         shift.setExpectedClosingBalance(expected);
-        shift.setActualClosingBalance(actual);
-        shift.setDifference(diff);
+        shift.setActualClosingBalance(request.montoDeclarado());
+        shift.setDifference(difference);
         shift.setStatus(com.cinezone.demo.model.entity.CashShift.CashShiftStatus.CERRADA);
+        shift.setClosedAt(java.time.LocalDateTime.now());
         
-        cashShiftRepository.save(shift);
-        return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(shift.getId(), shift.getOpenedAt(), shift.getClosedAt(), shift.getOpeningBalance(), expected, actual, diff, "CERRADA");
+        shift = cashShiftRepository.save(shift);
+        return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(shift.getId(), shift.getOpenedAt(), shift.getClosedAt(), shift.getOpeningBalance(), expected, request.montoDeclarado(), difference, "CERRADA", shift.getModule());
     }
 
     @Override

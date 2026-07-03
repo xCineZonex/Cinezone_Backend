@@ -47,6 +47,9 @@ public class CashShift {
     @Column(name = "estado", nullable = false, length = 20)
     private CashShiftStatus status;
 
+    @Column(name = "modulo", length = 50)
+    private String module;
+
     public enum CashShiftStatus {
         ABIERTA,
         CERRADA
@@ -139,5 +142,13 @@ public class CashShift {
 
     public void setStatus(CashShiftStatus status) {
         this.status = status;
+    }
+
+    public String getModule() {
+        return this.module;
+    }
+
+    public void setModule(String module) {
+        this.module = module;
     }
 }
