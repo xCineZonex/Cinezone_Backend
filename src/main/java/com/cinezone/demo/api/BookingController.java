@@ -33,7 +33,7 @@ public class BookingController {
 
 
 
-    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('TAQUILLA', 'ADMIN')")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('TAQUILLA', 'DULCERIA', 'ADMIN')")
     @PostMapping("/{bookingId}/simular-pago")
     public ResponseEntity<Void> confirmPurchase(@PathVariable UUID bookingId) {
         service.confirmPurchase(bookingId);
