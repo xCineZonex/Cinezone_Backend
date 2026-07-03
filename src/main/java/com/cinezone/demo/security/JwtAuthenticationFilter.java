@@ -60,8 +60,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     
                     // Single Session Validation (Concurrency Check)
                     String tokenSession = jwtService.extractClaim(jwt, claims -> claims.get("sessionToken", String.class));
-                    if (dbUser.getSessionToken() != null && !dbUser.getSessionToken().equals(tokenSession)) {
-                        // El token de sesión no coincide (alguien más inició sesión en otra parte)
+                    if (dbUser.getSessionToken() == null || !dbUser.getSessionToken().equals(tokenSession)) {
+                        // El token de sesión no coincide (alguien más inició sesión o sesión revocada)
                         filterChain.doFilter(request, response);
                         return; // Lo tratamos como token inválido
                     }

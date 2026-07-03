@@ -275,7 +275,8 @@ public class UserServiceImpl implements UserService {
                 user.getRol().name(),
                 user.getTier() != null ? 4 : 0,
                 user.getMonthlyBenefitUsage(),
-                user.getSedes().stream().map(Cinema::getId).collect(Collectors.toList())
+                user.getSedes().stream().map(Cinema::getId).collect(Collectors.toList()),
+                user.getActivo()
         );
     }
 
@@ -288,7 +289,13 @@ public class UserServiceImpl implements UserService {
         User currentUser = getCurrentAuthenticatedUser();
         validateHierarchyAndScope(currentUser, targetUser);
         
-        userRepository.delete(targetUser);
+        boolean newStatus = !targetUser.getActivo();
+        targetUser.setActivo(newStatus);
+        
+        if (!newStatus) {
+            targetUser.setSessionToken(null);
+        }
+        userRepository.save(targetUser);
     }
 
     @Override

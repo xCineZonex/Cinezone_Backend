@@ -20,5 +20,6 @@ public record UserProfileResponseDTO(
         String rol,
         Integer maxMonthlyBenefits, // deprecated, soon to be removed
         java.util.Map<String, Integer> monthlyBenefitUsage,
-        java.util.List<Long> sedesIds
+        java.util.List<Long> sedesIds,
+        Boolean activo
 ) {}
