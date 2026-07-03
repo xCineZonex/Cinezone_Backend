@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public class ComplaintServiceImpl implements ComplaintService {
     
     private final ComplaintRepository complaintRepository;
+    private final com.cinezone.demo.service.EmailService emailService;
 
     @Override
     @Transactional(readOnly = true)
@@ -41,6 +42,16 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaint.setEstado("RESUELTO");
         complaint.setRespuestaAdmin(respuestaAdmin);
         complaint.setFechaRespuesta(java.time.LocalDateTime.now());
-        return ComplaintDTO.fromEntity(complaintRepository.save(complaint));
+        
+        Complaint savedComplaint = complaintRepository.save(complaint);
+        
+        // Enviar correo de respuesta
+        try {
+            emailService.sendComplaintReplyEmail(savedComplaint);
+        } catch (Exception e) {
+            System.err.println("Error enviando correo de reclamo: " + e.getMessage());
+        }
+        
+        return ComplaintDTO.fromEntity(savedComplaint);
     }
 }
