@@ -31,11 +31,7 @@ public class BookingController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/{bookingId}/simular-pago")
-    public ResponseEntity<Void> confirmPurchase(@PathVariable UUID bookingId) {
-        service.confirmPurchase(bookingId);
-        return ResponseEntity.ok().build();
-    }
+
 
     @GetMapping("/showtime/{showtimeId}/ticket-types")
     public ResponseEntity<List<Map<String, Object>>> getTicketTypes(@PathVariable Long showtimeId) {
