@@ -47,8 +47,11 @@ public class MercadoPagoController {
                     .unitPrice(booking.getMontoTotal())
                     .build();
 
-            // Limpiamos la URL del frontend por si viene con coma o espacios (a veces cors allowed origins tiene varios separados por coma)
+            // Limpiamos la URL del frontend por si viene con coma o espacios
             String baseUrl = frontendUrl.split(",")[0].trim();
+            if (baseUrl.endsWith("/")) {
+                baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+            }
 
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
                     .success(baseUrl + "/checkout/boleta?bookingId=" + booking.getId().toString())
