@@ -31,13 +31,7 @@ public class PublicController {
         List<com.cinezone.demo.model.entity.Cinema> cinemas = cinemaRepository.findAll();
         List<com.cinezone.demo.dto.CinemaDTO> dtos = cinemas.stream()
                 .filter(com.cinezone.demo.model.entity.Cinema::getActiva)
-                .map(c -> new com.cinezone.demo.dto.CinemaDTO(
-                        c.getId(),
-                        c.getNombre(),
-                        c.getDireccion(),
-                        c.getCiudad(),
-                        c.getImagen()
-                ))
+                .map(com.cinezone.demo.dto.CinemaDTO::fromEntity)
                 .toList();
         return ResponseEntity.ok(dtos);
     }
