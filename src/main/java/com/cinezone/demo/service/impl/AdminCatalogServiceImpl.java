@@ -162,7 +162,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         }
         
         LocalDateTime limiteCierre = inicioNueva.toLocalDate().atTime(1, 0);
-        if (inicioNueva.toLocalTime().isAfter(java.time.LocalTime.of(16, 0))) {
+        if (!inicioNueva.toLocalTime().isBefore(java.time.LocalTime.of(16, 0))) {
             limiteCierre = limiteCierre.plusDays(1);
         }
         if (finNueva.isAfter(limiteCierre)) {
@@ -208,7 +208,15 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 .orElseThrow(() -> new ResourceNotFoundException("Película no encontrada"));
 
         // Convertimos el texto (Ej: "RETIRADA") al valor del Enum
-        movie.setEstado(MovieStatus.valueOf(newStatus.toUpperCase()));
+        MovieStatus newStatusEnum = MovieStatus.valueOf(newStatus.toUpperCase());
+        
+        if (movie.getEstado() == MovieStatus.EN_CARTELERA) {
+            if (newStatusEnum == MovieStatus.PRE_VENTA || newStatusEnum == MovieStatus.PROXIMAMENTE) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("No se puede regresar el estado a PRE_VENTA o PROXIMAMENTE si ya está EN_CARTELERA");
+            }
+        }
+        
+        movie.setEstado(newStatusEnum);
         return com.cinezone.demo.dto.MovieDTO.fromEntity(movieRepository.save(movie));
     }
 
@@ -243,10 +251,25 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
         validateOwnershipGuard(auditorium.getCinema().getId());
 
+        if (enMantenimiento) {
+            java.util.List<Showtime> activeShowtimes = showtimeRepository.findByAuditoriumIdAndActivaTrue(auditoriumId);
+            boolean hasFutureBookings = activeShowtimes.stream()
+                    .filter(st -> st.getFechaHora().isAfter(LocalDateTime.now()))
+                    .anyMatch(st -> bookingRepository.existsByShowtimeIdAndEstadoIn(
+                            st.getId(),
+                            java.util.List.of(com.cinezone.demo.model.enums.BookingStatus.VALIDA, 
+                                              com.cinezone.demo.model.enums.BookingStatus.USADA, 
+                                              com.cinezone.demo.model.enums.BookingStatus.PENDIENTE)
+                    ));
+            if (hasFutureBookings) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("No se puede poner la sala en mantenimiento porque tiene funciones futuras con boletos vendidos o reservados.");
+            }
+        }
+
         // Si entra en mantenimiento (true), la sala se desactiva (activa = false)
         auditorium.setActiva(!enMantenimiento);
         return com.cinezone.demo.dto.AuditoriumDTO.fromEntity(auditoriumRepository.save(auditorium));
-        }
+    }
 
         @Override
         @Transactional
@@ -303,6 +326,13 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
     @Transactional
     public com.cinezone.demo.dto.MovieDTO updateMovie(Long id, MovieUpdateDTO request) {
         Movie movie = movieRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Película no encontrada"));
+        
+        if (request.estado() != null && movie.getEstado() == com.cinezone.demo.model.enums.MovieStatus.EN_CARTELERA) {
+            if (request.estado() == com.cinezone.demo.model.enums.MovieStatus.PRE_VENTA || request.estado() == com.cinezone.demo.model.enums.MovieStatus.PROXIMAMENTE) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("Una película 'EN CARTELERA' no puede regresar a estado de Preventa o Próximamente.");
+            }
+        }
+        
         if (request.titulo() != null) movie.setTitulo(request.titulo());
         if (request.sinopsis() != null) movie.setSinopsis(request.sinopsis());
         if (request.duracionMinutos() != null) movie.setDuracionMinutos(request.duracionMinutos());
@@ -342,8 +372,9 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 throw new com.cinezone.demo.exception.BusinessRuleException("Ya existe una sala con el nombre '" + request.nombre() + "' en esta sede.");
             }
             java.util.List<Showtime> activeShowtimes = showtimeRepository.findByAuditoriumIdAndActivaTrue(id);
-            if (!activeShowtimes.isEmpty()) {
-                throw new com.cinezone.demo.exception.BusinessRuleException("No se puede editar el nombre de la sala porque tiene funciones programadas o activas.");
+            boolean hasFutureShowtimes = activeShowtimes.stream().anyMatch(st -> st.getFechaHora().isAfter(LocalDateTime.now()));
+            if (hasFutureShowtimes) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("No se puede editar el nombre de la sala porque tiene funciones futuras programadas o activas.");
             }
             auditorium.setNombre(request.nombre());
         }
@@ -390,7 +421,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             }
             
             LocalDateTime limiteCierre = inicioNueva.toLocalDate().atTime(1, 0);
-            if (inicioNueva.toLocalTime().isAfter(java.time.LocalTime.of(16, 0))) {
+            if (!inicioNueva.toLocalTime().isBefore(java.time.LocalTime.of(16, 0))) {
                 limiteCierre = limiteCierre.plusDays(1);
             }
             if (finNueva.isAfter(limiteCierre)) {
@@ -536,8 +567,9 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 throw new com.cinezone.demo.exception.BusinessRuleException("Ya existe una sala con el nombre '" + request.nombre() + "' en esta sede.");
             }
             java.util.List<Showtime> activeShowtimes = showtimeRepository.findByAuditoriumIdAndActivaTrue(auditoriumId);
-            if (!activeShowtimes.isEmpty()) {
-                throw new com.cinezone.demo.exception.BusinessRuleException("No se puede editar el nombre de la sala porque tiene funciones programadas o activas.");
+            boolean hasFutureShowtimes = activeShowtimes.stream().anyMatch(st -> st.getFechaHora().isAfter(LocalDateTime.now()));
+            if (hasFutureShowtimes) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("No se puede editar el nombre de la sala porque tiene funciones futuras programadas o activas.");
             }
             auditorium.setNombre(request.nombre());
         }
