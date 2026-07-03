@@ -753,9 +753,9 @@ public class BookingServiceImpl implements BookingService {
     @org.springframework.scheduling.annotation.Scheduled(fixedRate = 60000)
     @Transactional
     public void cleanupAbandonedBookings() {
-        // Limpiar reservas pendientes de más de 10 minutos
-        java.time.LocalDateTime tenMinutesAgo = java.time.LocalDateTime.now().minusMinutes(10);
-        java.util.List<Booking> abandonedBookings = bookingRepository.findByEstadoAndFechaCompraBefore(BookingStatus.PENDIENTE, tenMinutesAgo);
+        // Limpiar reservas pendientes de más de 5 minutos
+        java.time.LocalDateTime limitTime = java.time.LocalDateTime.now().minusMinutes(5);
+        java.util.List<Booking> abandonedBookings = bookingRepository.findByEstadoAndFechaCompraBefore(BookingStatus.PENDIENTE, limitTime);
         
         for (Booking booking : abandonedBookings) {
             try {
