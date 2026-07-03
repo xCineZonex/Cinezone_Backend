@@ -59,11 +59,19 @@ public class MercadoPagoController {
                     .failure(baseUrl + "/checkout/pago?status=failure")
                     .build();
 
+            com.mercadopago.client.preference.PreferencePaymentMethodsRequest paymentMethods = com.mercadopago.client.preference.PreferencePaymentMethodsRequest.builder()
+                    .excludedPaymentTypes(java.util.Arrays.asList(
+                            com.mercadopago.client.preference.PreferencePaymentTypeRequest.builder().id("ticket").build(),
+                            com.mercadopago.client.preference.PreferencePaymentTypeRequest.builder().id("atm").build()
+                    ))
+                    .build();
+
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                     .items(Collections.singletonList(itemRequest))
                     .backUrls(backUrls)
                     .autoReturn("approved")
                     .externalReference(booking.getId().toString())
+                    .paymentMethods(paymentMethods)
                     .build();
 
             PreferenceClient client = new PreferenceClient();
