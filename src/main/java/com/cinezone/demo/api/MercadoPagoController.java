@@ -28,6 +28,9 @@ public class MercadoPagoController {
     private final BookingRepository bookingRepository;
     private final BookingService bookingService;
 
+    @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins:http://localhost:3000}")
+    private String frontendUrl;
+
     @PostMapping("/preferencia/{bookingId}")
     public ResponseEntity<?> crearPreferencia(@PathVariable UUID bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -44,10 +47,13 @@ public class MercadoPagoController {
                     .unitPrice(booking.getMontoTotal())
                     .build();
 
+            // Limpiamos la URL del frontend por si viene con coma o espacios (a veces cors allowed origins tiene varios separados por coma)
+            String baseUrl = frontendUrl.split(",")[0].trim();
+
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
-                    .success("http://localhost:3000/checkout/boleta?bookingId=" + booking.getId().toString())
-                    .pending("http://localhost:3000/checkout/pago?status=pending")
-                    .failure("http://localhost:3000/checkout/pago?status=failure")
+                    .success(baseUrl + "/checkout/boleta?bookingId=" + booking.getId().toString())
+                    .pending(baseUrl + "/checkout/pago?status=pending")
+                    .failure(baseUrl + "/checkout/pago?status=failure")
                     .build();
 
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
