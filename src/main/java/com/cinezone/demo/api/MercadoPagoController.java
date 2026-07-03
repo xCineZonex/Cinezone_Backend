@@ -29,7 +29,7 @@ public class MercadoPagoController {
     private final BookingService bookingService;
 
     @PostMapping("/preferencia/{bookingId}")
-    public ResponseEntity<Map<String, String>> crearPreferencia(@PathVariable UUID bookingId) {
+    public ResponseEntity<?> crearPreferencia(@PathVariable UUID bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Boleta no encontrada"));
 
@@ -66,8 +66,13 @@ public class MercadoPagoController {
             
             return ResponseEntity.ok(response);
 
-        } catch (MPException | MPApiException e) {
-            throw new RuntimeException("Error creando preferencia de Mercado Pago: " + e.getMessage(), e);
+        } catch (MPApiException e) {
+            String errorMsg = "MercadoPago API Error: " + e.getApiResponse().getContent();
+            System.err.println(errorMsg);
+            return ResponseEntity.status(500).body(Collections.singletonMap("error", errorMsg));
+        } catch (MPException e) {
+            String errorMsg = "Error interno de MercadoPago SDK: " + e.getMessage();
+            return ResponseEntity.status(500).body(Collections.singletonMap("error", errorMsg));
         }
     }
 
