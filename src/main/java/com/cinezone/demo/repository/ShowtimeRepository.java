@@ -14,6 +14,8 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"movie", "auditorium", "cinema"})
     List<Showtime> findAll();
 
+    boolean existsByMovieIdAndActivaTrueAndFechaHoraAfter(Long movieId, LocalDateTime now);
+
     // Buscar funciones activas de una película en una sede específica desde la fecha actual
     List<Showtime> findByMovieIdAndCinemaIdAndActivaTrueAndFechaHoraAfterOrderByFechaHoraAsc(
             Long movieId, Long cinemaId, LocalDateTime now);

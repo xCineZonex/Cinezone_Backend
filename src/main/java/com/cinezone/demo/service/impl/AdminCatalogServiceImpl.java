@@ -228,6 +228,13 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             }
         }
         
+        if (newStatusEnum == MovieStatus.RETIRADA && currentStatus != MovieStatus.RETIRADA) {
+            boolean hasFutureShowtimes = showtimeRepository.existsByMovieIdAndActivaTrueAndFechaHoraAfter(movieId, java.time.LocalDateTime.now());
+            if (hasFutureShowtimes) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("No se puede retirar la película porque tiene funciones programadas activas en el futuro. Cancélelas primero.");
+            }
+        }
+        
         movie.setEstado(newStatusEnum);
         return com.cinezone.demo.dto.MovieDTO.fromEntity(movieRepository.save(movie));
     }
@@ -354,6 +361,13 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             } else if (currentStatus == com.cinezone.demo.model.enums.MovieStatus.PRE_VENTA) {
                 if (newStatus == com.cinezone.demo.model.enums.MovieStatus.PROXIMAMENTE) {
                     throw new com.cinezone.demo.exception.BusinessRuleException("Una película en 'PREVENTA' no puede retroceder a estado 'PRÓXIMAMENTE'.");
+                }
+            }
+
+            if (newStatus == com.cinezone.demo.model.enums.MovieStatus.RETIRADA && currentStatus != com.cinezone.demo.model.enums.MovieStatus.RETIRADA) {
+                boolean hasFutureShowtimes = showtimeRepository.existsByMovieIdAndActivaTrueAndFechaHoraAfter(id, java.time.LocalDateTime.now());
+                if (hasFutureShowtimes) {
+                    throw new com.cinezone.demo.exception.BusinessRuleException("No se puede retirar la película porque tiene funciones programadas activas en el futuro. Cancélelas primero.");
                 }
             }
         }
