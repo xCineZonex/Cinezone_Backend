@@ -33,6 +33,13 @@ public class BookingController {
 
 
 
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('TAQUILLA', 'ADMIN')")
+    @PostMapping("/{bookingId}/simular-pago")
+    public ResponseEntity<Void> confirmPurchase(@PathVariable UUID bookingId) {
+        service.confirmPurchase(bookingId);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/showtime/{showtimeId}/ticket-types")
     public ResponseEntity<List<Map<String, Object>>> getTicketTypes(@PathVariable Long showtimeId) {
         return ResponseEntity.ok(service.getTicketTypes(showtimeId));
