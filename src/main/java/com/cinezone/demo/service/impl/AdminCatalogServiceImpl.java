@@ -54,6 +54,38 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         return (auth != null && auth.getName() != null) ? auth.getName() : "SYSTEM";
     }
 
+    private void validarAsientoParaSala(String tipoSala, SeatType tipoAsiento) {
+        String ts = tipoSala != null ? tipoSala.toUpperCase() : "REGULAR";
+        if (ts.equals("REGULAR") || ts.equals("FORMAT_2D") || ts.equals("3D") || ts.equals("FORMAT_3D") || ts.equals("4DX") || ts.equals("FORMAT_4DX")) {
+            if (tipoAsiento == SeatType.VIP) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("El tipo de sala " + tipoSala + " no permite asientos VIP.");
+            }
+        } else if (ts.equals("VIP")) {
+            if (tipoAsiento != SeatType.VIP) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("El tipo de sala VIP solo permite asientos VIP.");
+            }
+        }
+        // IMAX permite todos (ESTANDAR, DISCAPACIDAD, VIP)
+    }
+
+    private void validarFormatoParaSala(String tipoSala, com.cinezone.demo.model.enums.ProjectionFormat formato) {
+        String ts = tipoSala != null ? tipoSala.toUpperCase() : "REGULAR";
+        if (ts.equals("VIP")) return; // VIP permite cualquier formato
+        
+        if ((ts.equals("REGULAR") || ts.equals("FORMAT_2D")) && formato != com.cinezone.demo.model.enums.ProjectionFormat.FORMAT_2D) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("Una sala Regular (2D) solo permite funciones en 2D Estándar.");
+        }
+        if ((ts.equals("3D") || ts.equals("FORMAT_3D")) && formato != com.cinezone.demo.model.enums.ProjectionFormat.FORMAT_3D) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("Una sala 3D solo permite funciones en 3D Digital.");
+        }
+        if (ts.equals("IMAX") && formato != com.cinezone.demo.model.enums.ProjectionFormat.IMAX) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("Una sala IMAX solo permite funciones en formato IMAX.");
+        }
+        if ((ts.equals("4DX") || ts.equals("FORMAT_4DX")) && formato != com.cinezone.demo.model.enums.ProjectionFormat.FORMAT_4DX) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("Una sala 4DX solo permite funciones en formato 4DX.");
+        }
+    }
+
     @Override
     @Transactional
     public com.cinezone.demo.dto.MovieDTO createMovie(MovieCreateDTO request) {
@@ -129,6 +161,9 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada"));
 
         validateOwnershipGuard(cinema.getId());
+
+        // VALIDACIÓN DEL FORMATO DE PROYECCIÓN CONTRA EL TIPO DE SALA
+        validarFormatoParaSala(auditorium.getTipo(), request.formatoProyeccion());
 
         // VALIDACIÓN DE DISTRIBUCIÓN
         if (!movieDistributionRepository.existsByMovieIdAndCinemaId(movie.getId(), cinema.getId())) {
@@ -432,6 +467,11 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             throw new com.cinezone.demo.exception.BusinessRuleException("No se puede editar una función que ya ha finalizado.");
         }
 
+        // VALIDACIÓN DEL FORMATO DE PROYECCIÓN CONTRA EL TIPO DE SALA SI SE ACTUALIZA
+        if (request.formatoProyeccion() != null) {
+            validarFormatoParaSala(showtime.getAuditorium().getTipo(), request.formatoProyeccion());
+        }
+
         boolean hasBookings = bookingRepository.existsByShowtimeIdAndEstadoIn(
                 showtime.getId(),
                 java.util.List.of(com.cinezone.demo.model.enums.BookingStatus.VALIDA, 
@@ -573,6 +613,9 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         for (var item : request.asientos()) {
             char filaChar = (char) ('A' + (item.gridRow() - 1));
             SeatType tipo = SeatType.valueOf(item.tipo());
+            
+            validarAsientoParaSala(auditorium.getTipo(), tipo);
+            
             seatRepository.save(Seat.builder()
                     .auditorium(auditorium)
                     .fila(filaChar)
@@ -626,6 +669,9 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         for (var item : request.asientos()) {
             char filaChar = (char) ('A' + (item.gridRow() - 1));
             SeatType tipo = SeatType.valueOf(item.tipo());
+            
+            validarAsientoParaSala(auditorium.getTipo(), tipo);
+            
             seatRepository.save(Seat.builder()
                     .auditorium(auditorium)
                     .fila(filaChar)
