@@ -411,28 +411,58 @@ public class BookingServiceImpl implements BookingService {
         Showtime showtime = showtimeRepository.findById(showtimeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Función no encontrada"));
 
-        String formato = showtime.getFormatoProyeccion() != null ? showtime.getFormatoProyeccion().name() : "FORMAT_2D";
+        String rawFormato = showtime.getFormatoProyeccion() != null ? showtime.getFormatoProyeccion().name() : "FORMAT_2D";
+        String showFormato = rawFormato.replace("FORMAT_", "").toUpperCase();
 
         Long sedeId = showtime.getCinema().getId();
+        String salaTipo = showtime.getAuditorium().getTipo() != null ? showtime.getAuditorium().getTipo().toUpperCase() : "REGULAR";
+
         java.util.List<TicketBasePrice> basePrices = ticketBasePriceRepository.findAll();
         java.util.List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
 
         for (TicketBasePrice base : basePrices) {
             if (!base.getIsActive()) continue;
+            
             // Excluir BENEFICIO para que no aparezca en "Entradas Generales"
             if (base.getTicketType() == com.cinezone.demo.model.enums.TicketType.BENEFICIO) continue;
-            
-            if (base.getFormato() != null && !base.getFormato().equals("TODOS") && !base.getFormato().equals(formato)) {
-                // Compatibilidad con "2D" y "FORMAT_2D"
-                if (formato.equals("FORMAT_2D") && base.getFormato().equals("2D")) {
-                    // Permitir
-                } else if (formato.equals("2D") && base.getFormato().equals("FORMAT_2D")) {
-                    // Permitir
-                } else {
-                    continue; // Filtrar entradas por el tipo de formato de la sala
+
+            // Verificar si está desactivada explícitamente para esta sede
+            TicketTypeSedePrice sedePrice = ticketTypeSedePriceRepository.findByCinemaIdAndTicketBasePriceId(sedeId, base.getId()).orElse(null);
+            if (sedePrice != null && !sedePrice.getIsActive()) {
+                continue;
+            }
+
+            // Filtrar por Formato de Proyección
+            // Permitimos coincidencias parciales para que "VIP 2D" coincida con "2D"
+            String baseFormato = base.getFormato() != null ? base.getFormato().replace("FORMAT_", "").toUpperCase() : "2D";
+            if (!baseFormato.equals("TODOS") && !baseFormato.contains(showFormato)) {
+                continue;
+            }
+
+            // Filtrar por Tipo de Sala (VIP vs No VIP)
+            boolean isVipTicket = base.getName() != null && base.getName().toUpperCase().contains("VIP");
+
+            if (salaTipo.equals("VIP")) {
+                // Sala VIP solo admite tickets VIP
+                if (!isVipTicket) continue;
+            } else if (salaTipo.equals("IMAX")) {
+                // Sala IMAX admite tanto VIP como Estándar
+            } else {
+                // Otras salas (REGULAR, 3D, 4DX, etc.) NO admiten tickets VIP
+                if (isVipTicket) continue;
+            }
+
+            BigDecimal finalPrice = calculateTicketPrice(showtime, base.getTicketType());
+            // Utilizar el precio local de la sede si existe y está activo
+            if (sedePrice != null && sedePrice.getIsActive()) {
+                finalPrice = sedePrice.getLocalPrice();
+                java.time.DayOfWeek dow = showtime.getFechaHora().getDayOfWeek();
+                BigDecimal daySedePrice = getSedeDayPrice(sedePrice, dow);
+                if (daySedePrice != null) {
+                    finalPrice = daySedePrice;
                 }
             }
-            BigDecimal finalPrice = calculateTicketPrice(showtime, base.getTicketType());
+            
             result.add(java.util.Map.of(
                 "nombre", base.getName(),
                 "tipo", base.getTicketType().name(),
