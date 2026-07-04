@@ -15,4 +15,6 @@ public interface AuthService {
     void updatePassword(String email, PasswordUpdateDTO request);
     void forgotPassword(String email);
     void resetPassword(String token, String newPassword);
+    void verifyEmail(String email, String code);
+    void resendVerificationCode(String email);
 }

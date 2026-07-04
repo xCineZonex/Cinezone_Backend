@@ -293,4 +293,50 @@ public class EmailService {
             System.err.println("Error al enviar el correo de recuperación a: " + toEmail);
         }
     }
+    public void sendVerificationEmail(String toEmail, String code, String name) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("Verifica tu correo electrónico");
+
+            String htmlContent = "<!DOCTYPE html>\n" +
+                    "<html lang=\"es\">\n" +
+                    "<head>\n" +
+                    "  <meta charset=\"UTF-8\" />\n" +
+                    "  <style>\n" +
+                    "    body { font-family: Arial, sans-serif; background-color: #f4f4f5; color: #18181b; padding: 20px; }\n" +
+                    "    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }\n" +
+                    "    .header { background-color: #020617; padding: 20px; text-align: center; color: #ffffff; }\n" +
+                    "    .header h1 { margin: 0; font-size: 24px; font-weight: 900; }\n" +
+                    "    .header h1 span { color: #f59e0b; }\n" +
+                    "    .content { padding: 30px; line-height: 1.6; text-align: center; }\n" +
+                    "    .code-box { display: inline-block; background-color: #fef3c7; color: #b45309; font-size: 32px; letter-spacing: 5px; font-weight: bold; padding: 15px 30px; border-radius: 8px; margin: 20px 0; border: 2px dashed #f59e0b; }\n" +
+                    "  </style>\n" +
+                    "</head>\n" +
+                    "<body>\n" +
+                    "  <div class=\"container\">\n" +
+                    "    <div class=\"header\">\n" +
+                    "      <h1>CINE<span>ZONE</span></h1>\n" +
+                    "    </div>\n" +
+                    "    <div class=\"content\">\n" +
+                    "      <h2>Hola, " + name + "</h2>\n" +
+                    "      <p>Gracias por registrarte en CineZone.</p>\n" +
+                    "      <p>Para activar tu cuenta, por favor ingresa el siguiente código de verificación. Este código expirará en 10 minutos.</p>\n" +
+                    "      <div class=\"code-box\">" + code + "</div>\n" +
+                    "      <p style=\"margin-top: 20px; font-size: 12px; color: #777;\">Si no creaste una cuenta, puedes ignorar este correo.</p>\n" +
+                    "    </div>\n" +
+                    "  </div>\n" +
+                    "</body>\n" +
+                    "</html>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            e.printStackTrace();
+            System.err.println("Error al enviar el correo de verificación a: " + toEmail);
+        }
+    }
 }

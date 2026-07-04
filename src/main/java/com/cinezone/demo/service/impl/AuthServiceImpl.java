@@ -88,13 +88,23 @@ public class AuthServiceImpl implements AuthService { // Aquí aplicamos tu patr
         userToSave.setContrasena(passwordEncoder.encode(request.contrasena()));
         userToSave.setRol(Role.CLIENT);
         userToSave.setTier(baseTier);
-        userToSave.setEsSocio(true);
-        userToSave.setSessionToken(java.util.UUID.randomUUID().toString());
+        userToSave.setActivo(false); // Pendiente de verificación
+        
+        String code = String.format("%06d", new java.util.Random().nextInt(999999));
+        userToSave.setVerificationCodeHash(passwordEncoder.encode(code));
+        userToSave.setVerificationExpiry(java.time.LocalDateTime.now().plusMinutes(10));
+        userToSave.setVerificationAttempts(0);
 
         userRepository.save(userToSave);
 
-        String token = jwtService.generateToken(userToSave);
-        return new AuthResponseDTO(token, "Registro exitoso.", userToSave.getRol().name());
+        try {
+            emailService.sendVerificationEmail(userToSave.getCorreo(), code, userToSave.getNombre());
+        } catch (Exception e) {
+            System.err.println("Error sending verification email: " + e.getMessage());
+        }
+
+        // Devolvemos un token vacío ya que la cuenta no está activa aún.
+        return new AuthResponseDTO("", "Registro exitoso. Revisa tu correo para verificar tu cuenta.", userToSave.getRol().name());
     }
 
     @Override
@@ -106,6 +116,10 @@ public class AuthServiceImpl implements AuthService { // Aquí aplicamos tu patr
         User user = userRepository.findByCorreo(request.correo())
                 .orElseThrow();
                 
+        if (!user.isEnabled()) {
+            throw new BusinessRuleException("Cuenta no verificada. Por favor, verifica tu correo.");
+        }
+        
         user.setSessionToken(java.util.UUID.randomUUID().toString());
         userRepository.save(user);
 
@@ -120,6 +134,10 @@ public class AuthServiceImpl implements AuthService { // Aquí aplicamos tu patr
 
         if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
             throw new RuntimeException("La contraseña actual es incorrecta");
+        }
+
+        if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
+            throw new BusinessRuleException("La nueva contraseña no puede ser igual a la actual");
         }
 
         user.setContrasena(passwordEncoder.encode(request.newPassword()));
@@ -152,5 +170,57 @@ public class AuthServiceImpl implements AuthService { // Aquí aplicamos tu patr
         user.setContrasena(passwordEncoder.encode(newPassword));
         user.setSessionToken(java.util.UUID.randomUUID().toString()); // Invalida el token y desconecta sesiones activas
         userRepository.save(user);
+    }
+
+    @Override
+    public void verifyEmail(String email, String code) {
+        User user = userRepository.findByCorreo(email)
+                .orElseThrow(() -> new BusinessRuleException("Usuario no encontrado."));
+
+        if (user.isEnabled()) {
+            throw new BusinessRuleException("La cuenta ya está verificada.");
+        }
+
+        if (user.getVerificationExpiry() == null || user.getVerificationExpiry().isBefore(java.time.LocalDateTime.now())) {
+            throw new BusinessRuleException("El código de verificación ha expirado.");
+        }
+
+        if (user.getVerificationAttempts() >= 5) {
+            throw new BusinessRuleException("Has excedido el número máximo de intentos. Por favor, solicita un nuevo código.");
+        }
+
+        if (!passwordEncoder.matches(code, user.getVerificationCodeHash())) {
+            user.setVerificationAttempts(user.getVerificationAttempts() + 1);
+            userRepository.save(user);
+            throw new BusinessRuleException("Código de verificación incorrecto.");
+        }
+
+        user.setActivo(true);
+        user.setVerificationCodeHash(null);
+        user.setVerificationExpiry(null);
+        user.setVerificationAttempts(0);
+        userRepository.save(user);
+    }
+
+    @Override
+    public void resendVerificationCode(String email) {
+        User user = userRepository.findByCorreo(email)
+                .orElseThrow(() -> new BusinessRuleException("Usuario no encontrado."));
+
+        if (user.isEnabled()) {
+            throw new BusinessRuleException("La cuenta ya está verificada.");
+        }
+
+        String code = String.format("%06d", new java.util.Random().nextInt(999999));
+        user.setVerificationCodeHash(passwordEncoder.encode(code));
+        user.setVerificationExpiry(java.time.LocalDateTime.now().plusMinutes(10));
+        user.setVerificationAttempts(0);
+        userRepository.save(user);
+
+        try {
+            emailService.sendVerificationEmail(user.getCorreo(), code, user.getNombre());
+        } catch (Exception e) {
+            System.err.println("Error sending verification email: " + e.getMessage());
+        }
     }
 }

@@ -96,4 +96,19 @@ public class AuthController {
         }
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<java.util.Map<String, String>> verifyEmail(@RequestBody java.util.Map<String, String> request) {
+        String email = request.get("email");
+        String code = request.get("code");
+        authService.verifyEmail(email, code);
+        return ResponseEntity.ok(java.util.Map.of("message", "Cuenta verificada exitosamente. Ya puedes iniciar sesión."));
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<java.util.Map<String, String>> resendVerification(@RequestBody java.util.Map<String, String> request) {
+        String email = request.get("email");
+        authService.resendVerificationCode(email);
+        return ResponseEntity.ok(java.util.Map.of("message", "Nuevo código enviado al correo."));
+    }
 }

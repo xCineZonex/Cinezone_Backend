@@ -87,6 +87,16 @@ public class User implements UserDetails {
     @Column(name = "session_token")
     private String sessionToken;
 
+    @Column(name = "verification_code_hash")
+    private String verificationCodeHash;
+
+    @Column(name = "verification_expiry")
+    private LocalDateTime verificationExpiry;
+
+    @Column(name = "verification_attempts")
+    @Builder.Default
+    private Integer verificationAttempts = 0;
+
     // =========================================================
     // Relación con la nueva tabla de niveles (Por defecto será el Azul)
     @ManyToOne(fetch = FetchType.LAZY)
@@ -303,4 +313,13 @@ public class User implements UserDetails {
 
     public String getSessionToken() { return this.sessionToken; }
     public void setSessionToken(String sessionToken) { this.sessionToken = sessionToken; }
+
+    public String getVerificationCodeHash() { return this.verificationCodeHash; }
+    public void setVerificationCodeHash(String verificationCodeHash) { this.verificationCodeHash = verificationCodeHash; }
+
+    public LocalDateTime getVerificationExpiry() { return this.verificationExpiry; }
+    public void setVerificationExpiry(LocalDateTime verificationExpiry) { this.verificationExpiry = verificationExpiry; }
+
+    public Integer getVerificationAttempts() { return this.verificationAttempts; }
+    public void setVerificationAttempts(Integer verificationAttempts) { this.verificationAttempts = verificationAttempts; }
 }

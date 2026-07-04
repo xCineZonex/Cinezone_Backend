@@ -162,8 +162,13 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
         validateOwnershipGuard(cinema.getId());
 
+        com.cinezone.demo.model.enums.ProjectionFormat formatoAsignado = request.formatoProyeccion();
+        if ("IMAX".equalsIgnoreCase(auditorium.getTipo())) {
+            formatoAsignado = com.cinezone.demo.model.enums.ProjectionFormat.IMAX;
+        }
+
         // VALIDACIÓN DEL FORMATO DE PROYECCIÓN CONTRA EL TIPO DE SALA
-        validarFormatoParaSala(auditorium.getTipo(), request.formatoProyeccion());
+        validarFormatoParaSala(auditorium.getTipo(), formatoAsignado);
 
         // VALIDACIÓN DE DISTRIBUCIÓN
         if (!movieDistributionRepository.existsByMovieIdAndCinemaId(movie.getId(), cinema.getId())) {
@@ -220,7 +225,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         // PRECIOS DINÁMICOS (Dynamic Pricing)
         java.math.BigDecimal multiplicador = java.math.BigDecimal.ONE;
         
-        switch(request.formatoProyeccion().name()) {
+        switch(formatoAsignado.name()) {
             case "FORMAT_3D": multiplicador = multiplicador.add(new java.math.BigDecimal("0.20")); break; // +20%
             case "IMAX": multiplicador = multiplicador.add(new java.math.BigDecimal("0.50")); break; // +50%
             case "FORMAT_4DX": multiplicador = multiplicador.add(new java.math.BigDecimal("0.60")); break; // +60%
@@ -234,7 +239,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         Showtime showtime = Showtime.builder()
                 .movie(movie).auditorium(auditorium).cinema(cinema)
                 .fechaHora(request.fechaHora()).idioma(request.idioma())
-                .formatoProyeccion(request.formatoProyeccion()).activa(true)
+                .formatoProyeccion(formatoAsignado).activa(true)
                 .precioMultiplicador(multiplicador)
                 .build();
         return com.cinezone.demo.dto.ShowtimeDTO.fromEntity(showtimeRepository.save(showtime));
@@ -467,9 +472,14 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             throw new com.cinezone.demo.exception.BusinessRuleException("No se puede editar una función que ya ha finalizado.");
         }
 
+        com.cinezone.demo.model.enums.ProjectionFormat formatoAsignado = request.formatoProyeccion();
+        if (formatoAsignado != null && "IMAX".equalsIgnoreCase(showtime.getAuditorium().getTipo())) {
+            formatoAsignado = com.cinezone.demo.model.enums.ProjectionFormat.IMAX;
+        }
+
         // VALIDACIÓN DEL FORMATO DE PROYECCIÓN CONTRA EL TIPO DE SALA SI SE ACTUALIZA
-        if (request.formatoProyeccion() != null) {
-            validarFormatoParaSala(showtime.getAuditorium().getTipo(), request.formatoProyeccion());
+        if (formatoAsignado != null) {
+            validarFormatoParaSala(showtime.getAuditorium().getTipo(), formatoAsignado);
         }
 
         boolean hasBookings = bookingRepository.existsByShowtimeIdAndEstadoIn(
@@ -485,7 +495,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
         if (request.fechaHora() != null) showtime.setFechaHora(request.fechaHora());
         if (request.idioma() != null) showtime.setIdioma(request.idioma());
-        if (request.formatoProyeccion() != null) showtime.setFormatoProyeccion(request.formatoProyeccion());
+        if (formatoAsignado != null) showtime.setFormatoProyeccion(formatoAsignado);
         if (request.activa() != null) {
             showtime.setActiva(request.activa());
         }
