@@ -229,7 +229,7 @@ public class JefeSalaServiceImpl implements JefeSalaService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public Map<String, Object> updatePrecioSede(com.cinezone.demo.dto.UpdateSedePriceRequestDTO request) {
 
         Optional<TicketTypeSedePrice> existingOpt = ticketTypeSedePriceRepository.findByCinemaIdAndTicketBasePriceId(
