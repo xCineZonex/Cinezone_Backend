@@ -10,5 +10,6 @@ import java.util.UUID;
 @Repository
 public interface SystemAlertRepository extends JpaRepository<SystemAlert, UUID> {
     List<SystemAlert> findBySedeIdAndReceptorRolAndLeidoFalseOrderByFechaCreacionDesc(Long sedeId, String receptorRol);
+    List<SystemAlert> findBySedeIdInAndReceptorRolAndLeidoFalseOrderByFechaCreacionDesc(List<Long> sedeIds, String receptorRol);
     List<SystemAlert> findBySedeIdAndTipoAlertaOrderByFechaCreacionDesc(Long sedeId, String tipoAlerta);
 }

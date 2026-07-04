@@ -39,7 +39,9 @@ public class SystemAlertController {
 
     @GetMapping
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
-    public ResponseEntity<List<Map<String, Object>>> getAlerts(@org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User currentUser) {
+    public ResponseEntity<List<Map<String, Object>>> getAlerts(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User currentUser,
+            @RequestParam(required = false) Long sedeId) {
         if (currentUser == null) {
             return ResponseEntity.ok(List.of());
         }
@@ -47,10 +49,16 @@ public class SystemAlertController {
         if (user == null || user.getSedes() == null || user.getSedes().isEmpty()) {
             return ResponseEntity.ok(List.of());
         }
-        Long sedeId = user.getSedes().iterator().next().getId();
+        
+        List<Long> sedeIds;
+        if (sedeId != null) {
+            sedeIds = List.of(sedeId);
+        } else {
+            sedeIds = user.getSedes().stream().map(s -> s.getId()).toList();
+        }
         String rol = currentUser.getRol().name();
         
-        List<Map<String, Object>> response = systemAlertRepository.findBySedeIdAndReceptorRolAndLeidoFalseOrderByFechaCreacionDesc(sedeId, rol).stream()
+        List<Map<String, Object>> response = systemAlertRepository.findBySedeIdInAndReceptorRolAndLeidoFalseOrderByFechaCreacionDesc(sedeIds, rol).stream()
                 .map(a -> {
                     Map<String, Object> map = new java.util.HashMap<>();
                     map.put("id", a.getId());
@@ -98,10 +106,19 @@ public class SystemAlertController {
     }
 
     @GetMapping("/replacements")
-    public ResponseEntity<List<Map<String, Object>>> getReplacements(@org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User currentUser) {
+    public ResponseEntity<List<Map<String, Object>>> getReplacements(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User currentUser,
+            @RequestParam(required = false) Long sedeId) {
         if (currentUser == null || currentUser.getSedes().isEmpty()) return ResponseEntity.ok(List.of());
-        Long sedeId = currentUser.getSedes().iterator().next().getId();
-        List<Map<String, Object>> result = replacementRequestRepository.findByCinemaId(sedeId).stream()
+        
+        List<Long> sedeIds;
+        if (sedeId != null) {
+            sedeIds = List.of(sedeId);
+        } else {
+            sedeIds = currentUser.getSedes().stream().map(s -> s.getId()).toList();
+        }
+        
+        List<Map<String, Object>> result = replacementRequestRepository.findByCinemaIdIn(sedeIds).stream()
                 .filter(r -> "PENDING_ADMIN".equals(r.getStatus()) || "EN_PROCESO".equals(r.getStatus()))
                 .map(r -> {
                     Map<String, Object> map = new java.util.HashMap<>();
@@ -111,6 +128,7 @@ public class SystemAlertController {
                     map.put("requestedQuantity", r.getRequestedQuantity());
                     map.put("status", r.getStatus());
                     map.put("createdAt", r.getCreatedAt());
+                    map.put("sedeNombre", r.getCinema().getNombre());
                     return map;
                 })
                 .toList();

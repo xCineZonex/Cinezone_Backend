@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface ReplacementRequestRepository extends JpaRepository<ReplacementRequest, Long> {
     List<ReplacementRequest> findByCinemaId(Long cinemaId);
+    List<ReplacementRequest> findByCinemaIdIn(List<Long> cinemaIds);
 }
