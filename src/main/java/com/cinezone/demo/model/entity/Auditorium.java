@@ -30,6 +30,18 @@ public class Auditorium {
     @Builder.Default
     private Boolean activa = true;
 
+    @Column(name = "recargo", precision = 10, scale = 2)
+    @Builder.Default
+    private java.math.BigDecimal recargo = java.math.BigDecimal.ZERO;
+
+    public java.math.BigDecimal getRecargo() {
+        return this.recargo;
+    }
+
+    public void setRecargo(java.math.BigDecimal recargo) {
+        this.recargo = recargo;
+    }
+
     public Long getId() {
         return this.id;
     }

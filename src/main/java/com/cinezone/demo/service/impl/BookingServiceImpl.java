@@ -41,6 +41,7 @@ public class BookingServiceImpl implements BookingService {
     private final TicketTypeSedePriceRepository ticketTypeSedePriceRepository;
     private final com.cinezone.demo.service.EmailService emailService;
     private final com.cinezone.demo.repository.TicketBenefitRepository ticketBenefitRepository;
+    private final PriceCalculationService priceCalculationService;
     private final com.cinezone.demo.repository.BenefitMonthlyUsageRepository benefitMonthlyUsageRepository;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
@@ -131,7 +132,7 @@ public class BookingServiceImpl implements BookingService {
                     throw new BusinessRuleException("El tiempo de reserva expiró o el asiento no te pertenece.");
                 }
 
-                expectedTotal = expectedTotal.add(calculateTicketPrice(showtime, seatReq.tipoEntrada()));
+                expectedTotal = expectedTotal.add(priceCalculationService.calculateTicketPrice(showtime, seatReq.tipoEntrada()));
             }
         }
 
@@ -238,7 +239,7 @@ public class BookingServiceImpl implements BookingService {
                         .booking(booking)
                         .seat(seat)
                         .tipoEntrada(seatReq.tipoEntrada())
-                        .precioPagado(calculateTicketPrice(showtime, seatReq.tipoEntrada()))
+                        .precioPagado(priceCalculationService.calculateTicketPrice(showtime, seatReq.tipoEntrada()))
                         .beneficioId(seatReq.beneficioId())
                         .build();
 
@@ -330,7 +331,7 @@ public class BookingServiceImpl implements BookingService {
 
         final Showtime finalShowtime = showtime;
         List<PurchaseResponseDTO.ItemDetailDTO> entradasDetail = request.asientos() != null ? 
-            request.asientos().stream().map(a -> new PurchaseResponseDTO.ItemDetailDTO(a.tipoEntrada().name(), 1, calculateTicketPrice(finalShowtime, a.tipoEntrada()))).collect(java.util.stream.Collectors.toList()) : List.of();
+            request.asientos().stream().map(a -> new PurchaseResponseDTO.ItemDetailDTO(a.tipoEntrada().name(), 1, priceCalculationService.calculateTicketPrice(finalShowtime, a.tipoEntrada()))).collect(java.util.stream.Collectors.toList()) : List.of();
         
         final Long resolvedSedeIdFinal = resolvedSedeId;
         List<PurchaseResponseDTO.ItemDetailDTO> snacksDetail = request.snacks() != null ?
@@ -452,16 +453,7 @@ public class BookingServiceImpl implements BookingService {
                 if (isVipTicket) continue;
             }
 
-            BigDecimal finalPrice = calculateTicketPrice(showtime, base.getTicketType());
-            // Utilizar el precio local de la sede si existe y está activo
-            if (sedePrice != null && sedePrice.getIsActive()) {
-                finalPrice = sedePrice.getLocalPrice();
-                java.time.DayOfWeek dow = showtime.getFechaHora().getDayOfWeek();
-                BigDecimal daySedePrice = getSedeDayPrice(sedePrice, dow);
-                if (daySedePrice != null) {
-                    finalPrice = daySedePrice;
-                }
-            }
+            BigDecimal finalPrice = priceCalculationService.calculateTicketPrice(showtime, base.getTicketType());
             
             result.add(java.util.Map.of(
                 "nombre", base.getName(),
@@ -473,98 +465,7 @@ public class BookingServiceImpl implements BookingService {
         return result;
     }
 
-    private BigDecimal calculateTicketPrice(Showtime showtime, com.cinezone.demo.model.enums.TicketType ticketType) {
-        BigDecimal basePrice = new BigDecimal("25.00"); // default
-        Long sedeId = (showtime != null && showtime.getCinema() != null) ? showtime.getCinema().getId() : null;
-        String formato = showtime != null && showtime.getFormatoProyeccion() != null ? showtime.getFormatoProyeccion().name() : "FORMAT_2D";
-        
-        TicketBasePrice base = ticketBasePriceRepository.findByTicketTypeAndFormato(ticketType, formato)
-                                 .orElseGet(() -> ticketBasePriceRepository.findByTicketTypeAndFormato(ticketType, "2D")
-                                 .orElseGet(() -> ticketBasePriceRepository.findFirstByTicketType(ticketType).orElse(null)));
-                                 
-        if (base != null) {
-            basePrice = base.getBasePrice();
-            if (showtime != null) {
-                java.time.DayOfWeek dow = showtime.getFechaHora().getDayOfWeek();
-                BigDecimal dayBasePrice = getDayPrice(base, dow);
-                if (dayBasePrice != null) basePrice = dayBasePrice;
-            }
-
-            if (sedeId != null) {
-                TicketTypeSedePrice sedePrice = ticketTypeSedePriceRepository.findByCinemaIdAndTicketBasePriceId(sedeId, base.getId()).orElse(null);
-                if (sedePrice != null && sedePrice.getIsActive()) {
-                    basePrice = sedePrice.getLocalPrice();
-                    if (showtime != null) {
-                        java.time.DayOfWeek dow = showtime.getFechaHora().getDayOfWeek();
-                        BigDecimal daySedePrice = getSedeDayPrice(sedePrice, dow);
-                        if (daySedePrice != null) basePrice = daySedePrice;
-                    }
-                }
-            }
-        }
-        
-        if (showtime == null) return basePrice;
-        
-        Movie movie = showtime.getMovie();
-        java.time.LocalDateTime showtimeDate = showtime.getFechaHora();
-        
-        // 1. Time-delta based logic (Edad de la película en días)
-        if (movie.getFechaEstreno() != null) {
-            java.time.LocalDate fechaEstreno = movie.getFechaEstreno();
-            java.time.LocalDate fechaFuncion = showtimeDate.toLocalDate();
-            
-            long daysSinceEstreno = java.time.temporal.ChronoUnit.DAYS.between(fechaEstreno, fechaFuncion);
-
-            if (daysSinceEstreno < 0) {
-                // Pre-estreno
-                basePrice = basePrice.add(new BigDecimal("8.00"));
-            } else if (daysSinceEstreno >= 0 && daysSinceEstreno <= 6) {
-                // Estreno (Primeros 7 días)
-                basePrice = basePrice.add(new BigDecimal("5.00"));
-            }
-            // Si daysSinceEstreno >= 7, es precio regular (+0.00)
-        }
-        
-        // 2. VIP Room Surcharge
-        // Una sala es VIP exclusiva si NO existe ningún asiento que no sea VIP, y tiene asientos.
-        if (showtime.getAuditorium() != null) {
-            Long audId = showtime.getAuditorium().getId();
-            long totalSeats = seatRepository.countByAuditoriumId(audId);
-            if (totalSeats > 0 && !seatRepository.existsByAuditoriumIdAndTipoNot(audId, com.cinezone.demo.model.enums.SeatType.VIP)) {
-                basePrice = basePrice.add(new BigDecimal("10.00")); // Recargo sala exclusiva VIP
-            }
-        }
-        
-        if (basePrice.compareTo(BigDecimal.ZERO) < 0) {
-            basePrice = BigDecimal.ZERO;
-        }
-        
-        return basePrice;
-    }
-
-    private BigDecimal getDayPrice(TicketBasePrice base, java.time.DayOfWeek dow) {
-        return switch (dow) {
-            case MONDAY -> base.getPriceMonday();
-            case TUESDAY -> base.getPriceTuesday();
-            case WEDNESDAY -> base.getPriceWednesday();
-            case THURSDAY -> base.getPriceThursday();
-            case FRIDAY -> base.getPriceFriday();
-            case SATURDAY -> base.getPriceSaturday();
-            case SUNDAY -> base.getPriceSunday();
-        };
-    }
-
-    private BigDecimal getSedeDayPrice(TicketTypeSedePrice sedePrice, java.time.DayOfWeek dow) {
-        return switch (dow) {
-            case MONDAY -> sedePrice.getPriceMonday();
-            case TUESDAY -> sedePrice.getPriceTuesday();
-            case WEDNESDAY -> sedePrice.getPriceWednesday();
-            case THURSDAY -> sedePrice.getPriceThursday();
-            case FRIDAY -> sedePrice.getPriceFriday();
-            case SATURDAY -> sedePrice.getPriceSaturday();
-            case SUNDAY -> sedePrice.getPriceSunday();
-        };
-    }
+    // Methods calculateTicketPrice, getDayPrice, and getSedeDayPrice have been moved to PriceCalculationService
 
     @Override
     @Transactional
