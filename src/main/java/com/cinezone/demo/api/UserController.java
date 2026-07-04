@@ -92,7 +92,7 @@ public class UserController {
     public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getBookings(@org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User user) {
         java.util.List<com.cinezone.demo.model.entity.Booking> userBookings = bookingRepository.findByUser_IdAndEstadoInOrderByFechaCompraDesc(
                 user.getId(),
-                java.util.List.of(com.cinezone.demo.model.enums.BookingStatus.VALIDA, com.cinezone.demo.model.enums.BookingStatus.USADA, com.cinezone.demo.model.enums.BookingStatus.CANCELADA)
+                java.util.List.of(com.cinezone.demo.model.enums.BookingStatus.VALIDA, com.cinezone.demo.model.enums.BookingStatus.USADA)
         );
         
         java.util.List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
