@@ -12,20 +12,22 @@ import java.util.Base64;
 @Component
 public class QrGeneratorUtil {
 
-    public String generateQrCodeBase64(String content) {
+    public byte[] generateQrCodeBytes(String content) {
         try {
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
-            // Creamos un QR de 300x300 pixeles
             BitMatrix bitMatrix = qrCodeWriter.encode(content, BarcodeFormat.QR_CODE, 300, 300);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             MatrixToImageWriter.writeToStream(bitMatrix, "PNG", outputStream);
 
-            byte[] qrBytes = outputStream.toByteArray();
-            return Base64.getEncoder().encodeToString(qrBytes);
-
+            return outputStream.toByteArray();
         } catch (Exception e) {
             throw new RuntimeException("Error al generar el Código QR", e);
         }
+    }
+
+    public String generateQrCodeBase64(String content) {
+        byte[] qrBytes = generateQrCodeBytes(content);
+        return Base64.getEncoder().encodeToString(qrBytes);
     }
 }

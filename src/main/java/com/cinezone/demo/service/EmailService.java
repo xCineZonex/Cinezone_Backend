@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.core.io.ByteArrayResource;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +43,16 @@ public class EmailService {
             String htmlContent = generateHtmlTicket(booking);
             helper.setText(htmlContent, true);
 
+            // Generate QR Bytes and attach as inline
+            String nroCompra = booking.getCodigoUnico().toString();
+            String pelicula = booking.getShowtime() != null ? booking.getShowtime().getMovie().getTitulo() : "Sólo Dulcería";
+            List<Ticket> tickets = ticketRepository.findByBookingId(booking.getId());
+            String butacasStr = tickets.stream().map(t -> String.valueOf(t.getSeat().getFila()) + t.getSeat().getNumero()).collect(Collectors.joining(", "));
+            if (butacasStr.isEmpty()) butacasStr = "Sin butacas";
+            String qrContent = String.format("{\"boleta\":\"%s\", \"info\":\"%s\", \"asientos\":\"%s\"}", nroCompra, pelicula, butacasStr);
+            byte[] qrBytes = qrGeneratorUtil.generateQrCodeBytes(qrContent);
+            helper.addInline("qrCode", new ByteArrayResource(qrBytes), "image/png");
+
             mailSender.send(message);
         } catch (MessagingException e) {
             e.printStackTrace();
@@ -65,10 +76,8 @@ public class EmailService {
         String butacasStr = tickets.stream().map(t -> String.valueOf(t.getSeat().getFila()) + t.getSeat().getNumero()).collect(Collectors.joining(", "));
         if (butacasStr.isEmpty()) butacasStr = "Sin butacas";
 
-        // Generar QR
-        String qrContent = String.format("{\"boleta\":\"%s\", \"info\":\"%s\", \"asientos\":\"%s\"}", nroCompra, pelicula, butacasStr);
-        String qrBase64 = qrGeneratorUtil.generateQrCodeBase64(qrContent);
-        String qrImgTag = "<img src=\"data:image/png;base64," + qrBase64 + "\" style=\"width:100%; height:100%; object-fit:contain;\" />";
+        // Generar QR Tag via CID
+        String qrImgTag = "<img src=\"cid:qrCode\" style=\"width:100%; height:100%; object-fit:contain;\" />";
 
         // Construir filas de entradas
         StringBuilder entradasHtml = new StringBuilder();
