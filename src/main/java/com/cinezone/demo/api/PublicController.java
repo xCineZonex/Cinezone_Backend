@@ -67,8 +67,35 @@ public class PublicController {
     }
 
     @GetMapping("/beneficios")
-    public ResponseEntity<List<java.util.Map<String, Object>>> getBeneficios() {
-        List<java.util.Map<String, Object>> list = ticketBenefitRepository.findAll().stream().map(b -> {
+    public ResponseEntity<List<java.util.Map<String, Object>>> getBeneficios(@RequestParam(required = false) Long sedeId) {
+        java.util.List<com.cinezone.demo.model.entity.TicketBenefit> allBenefits = ticketBenefitRepository.findAll();
+        
+        if (sedeId != null) {
+            java.util.List<com.cinezone.demo.model.entity.TicketTypeSedePrice> sedePrices = 
+                jdbcTemplate.query(
+                    "SELECT ticket_base_price_id, is_active FROM ticket_type_sede_prices_v2 WHERE sede_id = ?",
+                    (rs, rowNum) -> {
+                        com.cinezone.demo.model.entity.TicketTypeSedePrice tsp = new com.cinezone.demo.model.entity.TicketTypeSedePrice();
+                        com.cinezone.demo.model.entity.TicketBasePrice bp = new com.cinezone.demo.model.entity.TicketBasePrice();
+                        bp.setId(rs.getLong("ticket_base_price_id"));
+                        tsp.setTicketBasePrice(bp);
+                        tsp.setIsActive(rs.getBoolean("is_active"));
+                        return tsp;
+                    }, 
+                    sedeId
+                );
+                
+            allBenefits = allBenefits.stream().filter(b -> {
+                if (b.getTicketBasePriceId() == null) return true;
+                return sedePrices.stream()
+                        .filter(sp -> sp.getTicketBasePrice().getId().equals(b.getTicketBasePriceId()))
+                        .map(com.cinezone.demo.model.entity.TicketTypeSedePrice::getIsActive)
+                        .findFirst()
+                        .orElse(true);
+            }).collect(Collectors.toList());
+        }
+
+        List<java.util.Map<String, Object>> list = allBenefits.stream().map(b -> {
             java.util.Map<String, Object> map = new java.util.HashMap<>();
             map.put("id", b.getId());
             map.put("name", b.getName());
