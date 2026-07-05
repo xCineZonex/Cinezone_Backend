@@ -684,6 +684,17 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
 
     @Override
     @Transactional(readOnly = true)
+    public java.util.List<com.cinezone.demo.dto.MovieDTO> getMoviesForShowtimes() {
+        java.time.LocalDate hoy = java.time.LocalDate.now();
+        return movieRepository.findAll().stream()
+            .filter(m -> m.getEstado() == com.cinezone.demo.model.enums.MovieStatus.EN_CARTELERA || m.getEstado() == com.cinezone.demo.model.enums.MovieStatus.PRE_VENTA)
+            .filter(m -> m.getFechaFinCartelera() == null || !m.getFechaFinCartelera().isBefore(hoy))
+            .map(com.cinezone.demo.dto.MovieDTO::fromEntity)
+            .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public java.util.List<com.cinezone.demo.dto.ShowtimeDTO> getAllShowtimes() {
         return showtimeRepository.findAll().stream().map(com.cinezone.demo.dto.ShowtimeDTO::fromEntity).collect(java.util.stream.Collectors.toList());
     }

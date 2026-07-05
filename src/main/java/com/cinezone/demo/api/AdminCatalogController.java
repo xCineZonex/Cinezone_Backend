@@ -52,6 +52,11 @@ public class AdminCatalogController {
         return ResponseEntity.ok(catalogService.getAllMovies());
     }
 
+    @GetMapping("/peliculas/disponibles")
+    public ResponseEntity<List<com.cinezone.demo.dto.MovieDTO>> getMoviesForShowtimes() {
+        return ResponseEntity.ok(catalogService.getMoviesForShowtimes());
+    }
+
     @GetMapping("/funciones")
     public ResponseEntity<List<com.cinezone.demo.dto.ShowtimeDTO>> getShowtimes() {
         return ResponseEntity.ok(catalogService.getAllShowtimes());
