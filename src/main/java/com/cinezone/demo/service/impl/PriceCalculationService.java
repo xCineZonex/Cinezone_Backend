@@ -25,11 +25,9 @@ public class PriceCalculationService {
     public BigDecimal calculateTicketPrice(Showtime showtime, TicketType ticketType) {
         BigDecimal basePrice = new BigDecimal("25.00"); // default
         Long sedeId = (showtime != null && showtime.getCinema() != null) ? showtime.getCinema().getId() : null;
-        String formato = showtime != null && showtime.getFormatoProyeccion() != null ? showtime.getFormatoProyeccion().name() : "FORMAT_2D";
         
-        TicketBasePrice base = ticketBasePriceRepository.findByTicketTypeAndFormato(ticketType, formato)
-                                 .orElseGet(() -> ticketBasePriceRepository.findByTicketTypeAndFormato(ticketType, "2D")
-                                 .orElseGet(() -> ticketBasePriceRepository.findFirstByTicketType(ticketType).orElse(null)));
+        TicketBasePrice base = resolveTicketBasePrice(showtime, ticketType);
+                                 
                                  
         if (base != null) {
             basePrice = base.getBasePrice();
@@ -113,5 +111,49 @@ public class PriceCalculationService {
             case SATURDAY -> sedePrice.getPriceSaturday();
             case SUNDAY -> sedePrice.getPriceSunday();
         };
+    }
+
+    private TicketBasePrice resolveTicketBasePrice(Showtime showtime, TicketType ticketType) {
+        if (showtime == null) {
+            return ticketBasePriceRepository.findFirstByTicketType(ticketType).orElse(null);
+        }
+
+        String rawFormato = showtime.getFormatoProyeccion() != null ? showtime.getFormatoProyeccion().name() : "FORMAT_2D";
+        String showFormato = rawFormato.replace("FORMAT_", "").toUpperCase();
+        String salaTipo = showtime.getAuditorium().getTipo() != null ? showtime.getAuditorium().getTipo().toUpperCase() : "REGULAR";
+
+        String expectedPhase = "Cartelera";
+        if (showtime.getMovie().getEstado() == com.cinezone.demo.model.enums.MovieStatus.ESTRENO) {
+            expectedPhase = "Estreno";
+        } else if (showtime.getMovie().getEstado() == com.cinezone.demo.model.enums.MovieStatus.PRE_VENTA) {
+            expectedPhase = "Preventa";
+        }
+        final String phase = expectedPhase;
+
+        java.util.List<TicketBasePrice> allBases = ticketBasePriceRepository.findAll();
+        java.util.List<TicketBasePrice> matches = new java.util.ArrayList<>();
+
+        for (TicketBasePrice b : allBases) {
+            if (!b.getIsActive()) continue;
+            if (b.getTicketType() != ticketType) continue;
+            if (b.getFaseComercial() != null && !b.getFaseComercial().equalsIgnoreCase(phase)) continue;
+
+            String bFmt = b.getFormato() != null ? b.getFormato().replace("FORMAT_", "").toUpperCase() : "2D";
+            if (!bFmt.equals("TODOS") && !bFmt.contains(showFormato)) continue;
+
+            boolean isVipTicket = b.getName() != null && b.getName().toUpperCase().contains("VIP");
+            if (salaTipo.equals("VIP") && !isVipTicket) continue;
+            if (!salaTipo.equals("VIP") && !salaTipo.equals("IMAX") && isVipTicket) continue;
+
+            matches.add(b);
+        }
+
+        if (!matches.isEmpty()) {
+            return matches.get(0);
+        }
+
+        return allBases.stream()
+                .filter(b -> b.getTicketType() == ticketType && b.getIsActive())
+                .findFirst().orElse(null);
     }
 }

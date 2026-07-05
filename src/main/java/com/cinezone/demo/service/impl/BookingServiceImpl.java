@@ -408,11 +408,23 @@ public class BookingServiceImpl implements BookingService {
         java.util.List<TicketBasePrice> basePrices = ticketBasePriceRepository.findAll();
         java.util.List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
 
+        String expectedPhase = "Cartelera";
+        if (showtime.getMovie().getEstado() == com.cinezone.demo.model.enums.MovieStatus.ESTRENO) {
+            expectedPhase = "Estreno";
+        } else if (showtime.getMovie().getEstado() == com.cinezone.demo.model.enums.MovieStatus.PRE_VENTA) {
+            expectedPhase = "Preventa";
+        }
+
         for (TicketBasePrice base : basePrices) {
             if (!base.getIsActive()) continue;
             
             // Excluir BENEFICIO para que no aparezca en "Entradas Generales"
             if (base.getTicketType() == com.cinezone.demo.model.enums.TicketType.BENEFICIO) continue;
+
+            // Filtrar por Fase Comercial
+            if (base.getFaseComercial() != null && !base.getFaseComercial().equalsIgnoreCase(expectedPhase)) {
+                continue;
+            }
 
             // Verificar si está desactivada explícitamente para esta sede
             TicketTypeSedePrice sedePrice = ticketTypeSedePriceRepository.findByCinemaIdAndTicketBasePriceId(sedeId, base.getId()).orElse(null);
