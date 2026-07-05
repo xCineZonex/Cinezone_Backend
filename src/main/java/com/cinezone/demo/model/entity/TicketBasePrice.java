@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "ticket_base_prices_v2", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"ticket_type", "formato", "beneficio_id"})
+    @UniqueConstraint(columnNames = {"ticket_type", "formato", "beneficio_id", "fase_comercial"})
 })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class TicketBasePrice {
@@ -59,4 +59,8 @@ public class TicketBasePrice {
 
     @Column(name = "price_sunday", precision = 10, scale = 2)
     private BigDecimal priceSunday;
+
+    @Column(name = "fase_comercial", nullable = false, length = 20)
+    @Builder.Default
+    private String faseComercial = "Cartelera";
 }

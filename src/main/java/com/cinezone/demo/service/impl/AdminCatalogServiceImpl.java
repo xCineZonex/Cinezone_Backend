@@ -36,6 +36,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
     private final ProductStockRepository productStockRepository;
     private final BookingRepository bookingRepository;
     private final TicketBasePriceRepository ticketBasePriceRepository;
+    private final TicketTypeSedePriceRepository ticketTypeSedePriceRepository;
     private final RedisStockService redisStockService;
 
     private void validateOwnershipGuard(Long targetSedeId) {
@@ -119,7 +120,27 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 .nombre(request.nombre()).direccion(request.direccion())
                 .ciudad(request.ciudad()).imagen(request.imagen()).activa(true)
                 .build();
-        return com.cinezone.demo.dto.CinemaDTO.fromEntity(cinemaRepository.save(cinema));
+        cinema = cinemaRepository.save(cinema);
+
+        java.util.List<TicketBasePrice> basePrices = ticketBasePriceRepository.findAll();
+        for (TicketBasePrice basePrice : basePrices) {
+            TicketTypeSedePrice sedePrice = TicketTypeSedePrice.builder()
+                    .cinema(cinema)
+                    .ticketBasePrice(basePrice)
+                    .localPrice(basePrice.getBasePrice())
+                    .isActive(basePrice.getIsActive())
+                    .priceMonday(basePrice.getPriceMonday())
+                    .priceTuesday(basePrice.getPriceTuesday())
+                    .priceWednesday(basePrice.getPriceWednesday())
+                    .priceThursday(basePrice.getPriceThursday())
+                    .priceFriday(basePrice.getPriceFriday())
+                    .priceSaturday(basePrice.getPriceSaturday())
+                    .priceSunday(basePrice.getPriceSunday())
+                    .build();
+            ticketTypeSedePriceRepository.save(sedePrice);
+        }
+
+        return com.cinezone.demo.dto.CinemaDTO.fromEntity(cinema);
     }
 
     @Override
@@ -940,7 +961,8 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 entity.getPriceThursday(),
                 entity.getPriceFriday(),
                 entity.getPriceSaturday(),
-                entity.getPriceSunday()
+                entity.getPriceSunday(),
+                entity.getFaseComercial()
         )).toList();
     }
 
@@ -955,6 +977,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             entity.setTicketType(com.cinezone.demo.model.enums.TicketType.valueOf(request.ticketType()));
             entity.setFormato(request.formato());
             entity.setBasePrice(request.basePrice());
+            entity.setFaseComercial(request.faseComercial());
             if (request.isActive() != null) entity.setIsActive(request.isActive());
         } else {
             entity = new TicketBasePrice();
@@ -962,9 +985,32 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             entity.setTicketType(com.cinezone.demo.model.enums.TicketType.valueOf(request.ticketType()));
             entity.setFormato(request.formato());
             entity.setBasePrice(request.basePrice());
+            entity.setFaseComercial(request.faseComercial());
             entity.setIsActive(request.isActive() != null ? request.isActive() : true);
         }
         TicketBasePrice saved = ticketBasePriceRepository.save(entity);
+
+        java.util.List<Cinema> cinemas = cinemaRepository.findAll();
+        for (Cinema cinema : cinemas) {
+            java.util.Optional<TicketTypeSedePrice> optionalSedePrice = ticketTypeSedePriceRepository.findByCinemaIdAndTicketBasePriceId(cinema.getId(), saved.getId());
+            if (optionalSedePrice.isEmpty()) {
+                TicketTypeSedePrice sedePrice = TicketTypeSedePrice.builder()
+                        .cinema(cinema)
+                        .ticketBasePrice(saved)
+                        .localPrice(saved.getBasePrice())
+                        .isActive(saved.getIsActive())
+                        .priceMonday(saved.getPriceMonday())
+                        .priceTuesday(saved.getPriceTuesday())
+                        .priceWednesday(saved.getPriceWednesday())
+                        .priceThursday(saved.getPriceThursday())
+                        .priceFriday(saved.getPriceFriday())
+                        .priceSaturday(saved.getPriceSaturday())
+                        .priceSunday(saved.getPriceSunday())
+                        .build();
+                ticketTypeSedePriceRepository.save(sedePrice);
+            }
+        }
+
         return new com.cinezone.demo.dto.TicketBasePriceDTO(
                 saved.getId(),
                 saved.getTicketType() != null ? saved.getTicketType().name() : null,
@@ -980,7 +1026,8 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 saved.getPriceThursday(),
                 saved.getPriceFriday(),
                 saved.getPriceSaturday(),
-                saved.getPriceSunday()
+                saved.getPriceSunday(),
+                saved.getFaseComercial()
         );
     }
 }

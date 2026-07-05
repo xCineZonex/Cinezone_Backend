@@ -21,7 +21,10 @@ public class CatalogServiceImpl implements CatalogService {
     @Override
     @Transactional(readOnly = true)
     public List<MovieDTO> getBillboard() {
-        return getMoviesByStatus(MovieStatus.EN_CARTELERA);
+        List<Movie> cartelera = movieRepository.findByEstado(MovieStatus.EN_CARTELERA);
+        List<Movie> estrenos = movieRepository.findByEstado(MovieStatus.ESTRENO);
+        cartelera.addAll(estrenos);
+        return cartelera.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
     @Override

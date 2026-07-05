@@ -43,6 +43,7 @@ public class BookingServiceImpl implements BookingService {
     private final com.cinezone.demo.repository.TicketBenefitRepository ticketBenefitRepository;
     private final PriceCalculationService priceCalculationService;
     private final com.cinezone.demo.repository.BenefitMonthlyUsageRepository benefitMonthlyUsageRepository;
+    private final com.cinezone.demo.service.InventoryService inventoryService;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     // Métodos delegados para cálculo dinámico
@@ -145,14 +146,12 @@ public class BookingServiceImpl implements BookingService {
                 ProductStock productStock = productStockRepository.findByProductIdAndCinemaId(product.getId(), resolvedSedeId)
                         .orElseThrow(() -> new BusinessRuleException("Stock no inicializado para el producto en esta sede."));
 
+                if (productStock.getStock() == null || productStock.getStock() < snackReq.cantidad()) {
+                    throw new BusinessRuleException("Stock insuficiente para " + product.getNombre());
+                }
+                
                 // Validar y deducir en Redis ANTES de Postgres
                 redisStockService.decrementStock(product.getId(), resolvedSedeId, snackReq.cantidad());
-
-                if (productStock.getStock() == null || productStock.getStock() < snackReq.cantidad()) {
-                    // Auto-restock para facilitar pruebas
-                    productStock.setStock(999);
-                    productStockRepository.save(productStock);
-                }
                 if (!product.getDisponible()) {
                     throw new BusinessRuleException("Producto no disponible: " + product.getNombre());
                 }
@@ -286,20 +285,8 @@ public class BookingServiceImpl implements BookingService {
                         .build();
                 bookingSnackRepository.save(bookingSnack);
 
-                int newStock = stock.getStock() - snackReq.cantidad();
-                stock.setStock(newStock);
-                productStockRepository.save(stock);
-
-                com.cinezone.demo.model.entity.InventoryMovement mov = com.cinezone.demo.model.entity.InventoryMovement.builder()
-                        .product(product)
-                        .cinema(stock.getCinema())
-                        .type(com.cinezone.demo.model.entity.InventoryMovement.MovementType.SALIDA)
-                        .cantidad(snackReq.cantidad())
-                        .resultingStock(newStock)
-                        .motivo("Venta en Reserva #" + booking.getCodigoUnico().toString().substring(0,8))
-                        .registeredBy(currentUser)
-                        .build();
-                inventoryMovementRepository.save(mov);
+                String reason = "Venta en Reserva #" + booking.getCodigoUnico().toString().substring(0,8);
+                inventoryService.processSale(product, snackReq.cantidad(), resolvedSedeId, currentUser, reason);
 
                 totalSnacks = totalSnacks.add(bookingSnack.getPrecioTotal());
                 if (buyerUser.getTier() != null && !buyerUser.getTier().getName().equalsIgnoreCase("Azul")) {

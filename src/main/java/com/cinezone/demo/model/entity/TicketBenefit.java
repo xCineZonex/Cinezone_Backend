@@ -3,7 +3,6 @@ package com.cinezone.demo.model.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "ticket_benefits")
@@ -29,7 +28,6 @@ public class TicketBenefit {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tier_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private LoyaltyTier requiredTier;
 
     @Builder.Default

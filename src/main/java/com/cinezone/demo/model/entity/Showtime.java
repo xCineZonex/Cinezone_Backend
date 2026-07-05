@@ -2,7 +2,6 @@ package com.cinezone.demo.model.entity;
 
 import com.cinezone.demo.model.enums.Language;
 import com.cinezone.demo.model.enums.ProjectionFormat;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -10,7 +9,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "funciones")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Showtime {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

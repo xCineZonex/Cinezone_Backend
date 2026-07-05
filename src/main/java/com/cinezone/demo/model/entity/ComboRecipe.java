@@ -2,7 +2,6 @@ package com.cinezone.demo.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "combo_recipes")
@@ -15,12 +14,10 @@ public class ComboRecipe {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "combo_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Product comboProduct;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "insumo_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Product ingredientProduct;
 
     @Column(name = "cantidad", nullable = false)

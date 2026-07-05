@@ -4,12 +4,10 @@ import com.cinezone.demo.model.enums.ProductCategory;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "productos")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,7 +39,6 @@ public class Product {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "required_tier_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private LoyaltyTier requiredTier;
 
     private String imagen;
@@ -52,7 +49,6 @@ public class Product {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cinema_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Cinema cinema;
     public Long getId() {
         return this.id;

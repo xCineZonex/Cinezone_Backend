@@ -2,7 +2,6 @@ package com.cinezone.demo.model.entity;
 
 import com.cinezone.demo.model.enums.Language;
 import com.cinezone.demo.model.enums.MovieStatus;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
@@ -10,7 +9,6 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "peliculas")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Movie {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

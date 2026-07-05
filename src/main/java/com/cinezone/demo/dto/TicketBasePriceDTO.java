@@ -21,5 +21,6 @@ public record TicketBasePriceDTO(
         BigDecimal priceThursday,
         BigDecimal priceFriday,
         BigDecimal priceSaturday,
-        BigDecimal priceSunday
+        BigDecimal priceSunday,
+        String faseComercial
 ) {}

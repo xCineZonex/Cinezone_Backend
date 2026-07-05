@@ -25,6 +25,7 @@ public class InventoryServiceImpl implements InventoryService {
     private final com.cinezone.demo.repository.ProductStockRepository productStockRepository;
     private final com.cinezone.demo.repository.CinemaRepository cinemaRepository;
     private final com.cinezone.demo.service.RedisStockService redisStockService;
+    private final com.cinezone.demo.repository.ComboRecipeRepository comboRecipeRepository;
 
     @Override
     @Transactional
@@ -88,6 +89,8 @@ public class InventoryServiceImpl implements InventoryService {
         movement = movementRepository.save(movement);
 
         redisStockService.syncStock(product.getId(), actualSedeId, newStock);
+        
+        recalculateDependentProductsStock(product.getId(), actualSedeId);
 
         return mapToDTO(movement);
     }
@@ -141,5 +144,90 @@ public class InventoryServiceImpl implements InventoryService {
             stock.setIsActive(!Boolean.TRUE.equals(stock.getIsActive()));
         }
         productStockRepository.save(stock);
+    }
+
+    private void recalculateDependentProductsStock(Long ingredientProductId, Long cinemaId) {
+        List<com.cinezone.demo.model.entity.ComboRecipe> dependentRecipes = comboRecipeRepository.findByIngredientProductId(ingredientProductId);
+        for (com.cinezone.demo.model.entity.ComboRecipe recipe : dependentRecipes) {
+            Product comboProduct = recipe.getComboProduct();
+            List<com.cinezone.demo.model.entity.ComboRecipe> allRecipesForCombo = comboRecipeRepository.findByComboProductId(comboProduct.getId());
+            
+            int maxStockPossible = Integer.MAX_VALUE;
+            for (com.cinezone.demo.model.entity.ComboRecipe component : allRecipesForCombo) {
+                Product ingredient = component.getIngredientProduct();
+                int requiredQuantity = component.getQuantity();
+                com.cinezone.demo.model.entity.ProductStock ingredientStock = productStockRepository.findByProductIdAndCinemaId(ingredient.getId(), cinemaId).orElse(null);
+                int available = (ingredientStock != null && ingredientStock.getStock() != null) ? ingredientStock.getStock() : 0;
+                int possible = available / requiredQuantity;
+                if (possible < maxStockPossible) {
+                    maxStockPossible = possible;
+                }
+            }
+            if (maxStockPossible == Integer.MAX_VALUE) { maxStockPossible = 0; }
+            
+            com.cinezone.demo.model.entity.ProductStock comboStock = productStockRepository.findByProductIdAndCinemaId(comboProduct.getId(), cinemaId).orElse(null);
+            if (comboStock == null) {
+                com.cinezone.demo.model.entity.Cinema cinema = cinemaRepository.findById(cinemaId).orElse(null);
+                if (cinema != null) {
+                    comboStock = com.cinezone.demo.model.entity.ProductStock.builder()
+                            .product(comboProduct)
+                            .cinema(cinema)
+                            .stock(maxStockPossible)
+                            .isActive(true)
+                            .build();
+                }
+            } else {
+                comboStock.setStock(maxStockPossible);
+            }
+            
+            if (comboStock != null) {
+                productStockRepository.save(comboStock);
+                redisStockService.syncStock(comboProduct.getId(), cinemaId, maxStockPossible);
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void processSale(Product product, Integer quantity, Long cinemaId, User user, String reason) {
+        if (Boolean.TRUE.equals(product.getEsInsumo())) {
+            reduceStockAndLog(product, quantity, cinemaId, user, reason);
+            recalculateDependentProductsStock(product.getId(), cinemaId);
+        } else {
+            List<com.cinezone.demo.model.entity.ComboRecipe> recipes = comboRecipeRepository.findByComboProductId(product.getId());
+            if (recipes.isEmpty()) {
+                reduceStockAndLog(product, quantity, cinemaId, user, reason);
+            } else {
+                for (com.cinezone.demo.model.entity.ComboRecipe recipe : recipes) {
+                    reduceStockAndLog(recipe.getIngredientProduct(), quantity * recipe.getQuantity(), cinemaId, user, reason);
+                    recalculateDependentProductsStock(recipe.getIngredientProduct().getId(), cinemaId);
+                }
+            }
+        }
+    }
+
+    private void reduceStockAndLog(Product product, Integer quantity, Long cinemaId, User user, String reason) {
+        com.cinezone.demo.model.entity.ProductStock stock = productStockRepository.findByProductIdAndCinemaId(product.getId(), cinemaId)
+                .orElseThrow(() -> new BusinessRuleException("Stock no encontrado para " + product.getNombre()));
+        
+        int currentStock = stock.getStock() != null ? stock.getStock() : 0;
+        if (currentStock < quantity) {
+            throw new BusinessRuleException("Stock insuficiente para " + product.getNombre() + ". Disponible: " + currentStock);
+        }
+        
+        stock.setStock(currentStock - quantity);
+        productStockRepository.save(stock);
+        
+        InventoryMovement movement = InventoryMovement.builder()
+                .product(product)
+                .cinema(stock.getCinema())
+                .type(InventoryMovement.MovementType.SALIDA)
+                .cantidad(quantity)
+                .resultingStock(stock.getStock())
+                .motivo(reason)
+                .registeredBy(user)
+                .build();
+        movementRepository.save(movement);
+        redisStockService.syncStock(product.getId(), cinemaId, stock.getStock());
     }
 }

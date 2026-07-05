@@ -13,5 +13,6 @@ public record CreateTicketBasePriceRequestDTO(
         @NotNull String ticketType,
         String formato,
         @NotNull BigDecimal basePrice,
-        Boolean isActive
+        Boolean isActive,
+        @NotNull String faseComercial
 ) {}

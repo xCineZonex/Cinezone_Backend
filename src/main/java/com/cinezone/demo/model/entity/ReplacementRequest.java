@@ -2,7 +2,6 @@ package com.cinezone.demo.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,7 +11,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ReplacementRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

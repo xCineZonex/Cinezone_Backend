@@ -14,7 +14,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
             "WHERE s.cinema.id = :cinemaId " +
             "AND s.fechaHora > CURRENT_TIMESTAMP " +
             "AND s.activa = true " +
-            "AND s.movie.estado = com.cinezone.demo.model.enums.MovieStatus.EN_CARTELERA")
+            "AND s.movie.estado IN (com.cinezone.demo.model.enums.MovieStatus.EN_CARTELERA, com.cinezone.demo.model.enums.MovieStatus.ESTRENO)")
     List<Movie> findAvailableMoviesByCinema(@Param("cinemaId") Long cinemaId);
 
     // Buscar películas por su estado (EN_CARTELERA, RETIRADA, etc.)

@@ -9,6 +9,7 @@ import java.util.List;
 @Repository
 public interface ComboRecipeRepository extends JpaRepository<ComboRecipe, Long> {
     List<ComboRecipe> findByComboProductId(Long comboProductId);
+    List<ComboRecipe> findByIngredientProductId(Long ingredientProductId);
     void deleteByComboProductId(Long comboProductId);
     void deleteByIngredientProductId(Long ingredientProductId);
 }

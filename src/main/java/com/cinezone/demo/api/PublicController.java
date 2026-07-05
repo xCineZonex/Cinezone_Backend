@@ -67,7 +67,7 @@ public class PublicController {
     }
 
     @GetMapping("/beneficios")
-    public ResponseEntity<List<java.util.Map<String, Object>>> getBeneficios(@RequestParam(required = false) Long sedeId) {
+    public ResponseEntity<List<com.cinezone.demo.dto.TicketBenefitDTO>> getBeneficios(@RequestParam(required = false) Long sedeId) {
         java.util.List<com.cinezone.demo.model.entity.TicketBenefit> allBenefits = ticketBenefitRepository.findAll();
         
         if (sedeId != null) {
@@ -95,17 +95,7 @@ public class PublicController {
             }).collect(Collectors.toList());
         }
 
-        List<java.util.Map<String, Object>> list = allBenefits.stream().map(b -> {
-            java.util.Map<String, Object> map = new java.util.HashMap<>();
-            map.put("id", b.getId());
-            map.put("name", b.getName());
-            map.put("price", b.getPrice());
-            map.put("pointsRequired", b.getPointsRequired());
-            map.put("ticketCount", b.getTicketCount() != null ? b.getTicketCount() : 1);
-            map.put("monthlyLimit", b.getMonthlyLimit() != null ? b.getMonthlyLimit() : 0);
-            map.put("tierName", b.getRequiredTier() != null ? b.getRequiredTier().getName() : "");
-            return map;
-        }).collect(Collectors.toList());
+        List<com.cinezone.demo.dto.TicketBenefitDTO> list = allBenefits.stream().map(b -> new com.cinezone.demo.dto.TicketBenefitDTO(b.getId(), b.getName(), b.getPrice(), b.getPointsRequired(), b.getTicketCount() != null ? b.getTicketCount() : 1, b.getRequiredTier() != null ? b.getRequiredTier().getId() : null, b.getRequiredTier() != null ? b.getRequiredTier().getName() : "", b.getMonthlyLimit() != null ? b.getMonthlyLimit() : 0)).collect(Collectors.toList());
         return ResponseEntity.ok(list);
     }
 
