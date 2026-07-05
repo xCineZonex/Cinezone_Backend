@@ -13,7 +13,7 @@ public class KitchenController {
     }
 
     @GetMapping("/orders")
-    public ResponseEntity<java.util.List<Object>> getOrders(@RequestParam(required = false) String status) {
+    public ResponseEntity<java.util.List<com.cinezone.demo.dto.OrderResponseDTO>> getOrders(@RequestParam(required = false) String status) {
         return ResponseEntity.ok(java.util.List.of()); // TODO: Implementar búsqueda de órdenes
     }
 

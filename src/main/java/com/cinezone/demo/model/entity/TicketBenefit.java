@@ -39,7 +39,7 @@ public class TicketBenefit {
 
     @Builder.Default
     @Column(name = "formato", length = 50)
-    private String formato = "TODOS";
+    private String formato = com.cinezone.demo.util.AppConstants.FORMATO_TODOS;
 
     public Long getId() {
         return this.id;

@@ -24,7 +24,6 @@ public class SalesServiceImpl implements SalesService {
     private final com.cinezone.demo.repository.UserRepository userRepository;
     private final com.cinezone.demo.repository.ComplaintRepository complaintRepository;
     
-    // TODO: Remover PENDIENTE cuando se integre Mercado Pago
     private final List<BookingStatus> VALID_STATUSES = List.of(BookingStatus.VALIDA, BookingStatus.USADA, BookingStatus.PENDIENTE);
 
     @Override

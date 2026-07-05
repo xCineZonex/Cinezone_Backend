@@ -15,7 +15,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     List<Ticket> findByValidator_IdOrderByValidationDateDesc(UUID validatorId);
 
-    // TODO: Remover PENDIENTE cuando se integre Mercado Pago
     @org.springframework.data.jpa.repository.Query("SELECT b.showtime.movie.titulo, COUNT(t) FROM Ticket t " +
            "JOIN t.booking b " +
            "WHERE b.estado IN ('VALIDA', 'USADA', 'PENDIENTE') AND (:sedeId IS NULL OR b.showtime.cinema.id = :sedeId) " +

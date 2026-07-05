@@ -57,7 +57,7 @@ public class User implements UserDetails {
     @Column(nullable = false, length = 20)
     private Role rol;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "usuario_sedes",
         joinColumns = @JoinColumn(name = "usuario_id"),

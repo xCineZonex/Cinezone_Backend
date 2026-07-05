@@ -22,7 +22,7 @@ public class UserController {
     }
 
     @GetMapping("/me/history")
-    public ResponseEntity<java.util.List<Object>> getHistory() {
+    public ResponseEntity<java.util.List<com.cinezone.demo.dto.UserHistoryDTO>> getHistory() {
         return ResponseEntity.ok(java.util.List.of());
     }
 

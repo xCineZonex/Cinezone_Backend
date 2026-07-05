@@ -317,8 +317,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public List<UserProfileResponseDTO> getAllUsers() {
         User currentUser = getCurrentAuthenticatedUser();
-        return userRepository.findAll().stream()
-                .filter(user -> user.getRol() != Role.CLIENT)
+        return userRepository.findAllByRolNotWithSedes(Role.CLIENT).stream()
                 .filter(user -> canViewUser(currentUser, user))
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());

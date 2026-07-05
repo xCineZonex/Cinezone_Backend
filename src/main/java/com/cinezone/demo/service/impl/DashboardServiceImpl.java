@@ -68,30 +68,32 @@ public class DashboardServiceImpl implements DashboardService {
         long alertas = alertRepository.count();
         
         // Termómetro Quejas
-        List<Complaint> quejas = complaintRepository.findAll();
+        List<Object[]> quejasPorSedeId = complaintRepository.countComplaintsGroupedBySedeId();
         Map<String, Integer> quejasPorSede = new HashMap<>();
-        for (Complaint c : quejas) {
+        for (Object[] row : quejasPorSedeId) {
+            Long cSedeId = (Long) row[0];
+            int count = ((Number) row[1]).intValue();
             String sedeStr = "Global";
-            if (c.getSedeId() != null) {
-                var optCinema = cinemaRepository.findById(c.getSedeId());
+            if (cSedeId != null) {
+                var optCinema = cinemaRepository.findById(cSedeId);
                 if (optCinema.isPresent()) {
                     sedeStr = optCinema.get().getNombre();
                 }
             }
-            quejasPorSede.put(sedeStr, quejasPorSede.getOrDefault(sedeStr, 0) + 1);
+            quejasPorSede.put(sedeStr, quejasPorSede.getOrDefault(sedeStr, 0) + count);
         }
         List<Map<String, Object>> termometroQuejas = new ArrayList<>();
         quejasPorSede.forEach((sede, count) -> termometroQuejas.add(Map.of("sede", sede, "cantidad", count)));
 
         // Distribución Clientes
-        List<User> users = userRepository.findAll();
-        Map<String, Integer> roleCounts = new HashMap<>();
-        for (User u : users) {
-            String role = u.getRol().name();
-            roleCounts.put(role, roleCounts.getOrDefault(role, 0) + 1);
-        }
+        List<Object[]> roleCountsObj = userRepository.countUsersGroupedByRole();
         List<Map<String, Object>> distribucionClientes = new ArrayList<>();
-        roleCounts.forEach((rol, count) -> distribucionClientes.add(Map.of("nivel", rol, "cantidad", count)));
+        for (Object[] row : roleCountsObj) {
+            com.cinezone.demo.model.enums.Role roleEnum = (com.cinezone.demo.model.enums.Role) row[0];
+            distribucionClientes.add(Map.of("nivel", roleEnum.name(), "cantidad", ((Number) row[1]).intValue()));
+        }
+
+        Long totalPuntos = userRepository.sumPuntos();
 
         return Map.ofEntries(
             Map.entry("ingresosBrutosDia", ingresosTotales.doubleValue()),
@@ -102,7 +104,7 @@ public class DashboardServiceImpl implements DashboardService {
             Map.entry("alertasSistemaCajas", (int) alertas),
             Map.entry("termometroQuejas", termometroQuejas),
             Map.entry("distribucionClientes", distribucionClientes),
-            Map.entry("totalPuntosEmitidos", users.stream().mapToInt(User::getPuntos).sum()),
+            Map.entry("totalPuntosEmitidos", totalPuntos.intValue()),
             Map.entry("beneficiosPendientes", 0)
         );
     }
@@ -270,7 +272,7 @@ public class DashboardServiceImpl implements DashboardService {
     @Transactional(readOnly = true)
     public Map<String, Object> getKanbanReclamos(Long sedeId) {
 
-        List<Complaint> quejas = complaintRepository.findAll(); // Simplified, should filter by sede
+        List<Complaint> quejas = complaintRepository.findAllBySedeId(sedeId);
         List<Map<String, Object>> reportado = new ArrayList<>();
         for (Complaint c : quejas) {
             reportado.add(Map.of(

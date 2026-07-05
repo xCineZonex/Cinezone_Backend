@@ -14,6 +14,9 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     java.util.List<Object[]> countByTipoReclamo(@org.springframework.data.repository.query.Param("start") java.time.LocalDateTime start,
                                                 @org.springframework.data.repository.query.Param("end") java.time.LocalDateTime end);
 
+    @org.springframework.data.jpa.repository.Query("SELECT c.sedeId, COUNT(c) FROM Complaint c GROUP BY c.sedeId")
+    java.util.List<Object[]> countComplaintsGroupedBySedeId();
+
     long countByFechaReclamoBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
     long countByFechaReclamoBetweenAndEstado(java.time.LocalDateTime start, java.time.LocalDateTime end, String estado);
 

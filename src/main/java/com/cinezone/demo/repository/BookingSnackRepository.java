@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface BookingSnackRepository extends JpaRepository<BookingSnack, Long> {
-    // TODO: Remover PENDIENTE cuando se integre Mercado Pago
     @org.springframework.data.jpa.repository.Query("SELECT SUM(s.precioTotal) FROM BookingSnack s JOIN s.booking b WHERE b.estado IN ('VALIDA', 'USADA', 'PENDIENTE') AND (:sedeId IS NULL OR b.showtime.cinema.id = :sedeId) AND b.fechaCompra >= :startDate AND b.fechaCompra <= :endDate")
     java.math.BigDecimal calculateTotalSnackRevenue(@org.springframework.data.repository.query.Param("sedeId") Long sedeId,
                                                     @org.springframework.data.repository.query.Param("startDate") java.time.LocalDateTime startDate,

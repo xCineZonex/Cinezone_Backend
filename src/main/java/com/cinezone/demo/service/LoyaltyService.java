@@ -61,10 +61,10 @@ public class LoyaltyService {
         String tierName = b.getRequiredTier() != null && b.getRequiredTier().getId() != null ? 
             tierRepository.findById(b.getRequiredTier().getId()).map(LoyaltyTier::getName).orElse("") : "";
             
-        String suffix = (b.getFormato() != null && !b.getFormato().equals("TODOS")) ? " - " + b.getFormato() : "";
+        String suffix = (b.getFormato() != null && !b.getFormato().equals(com.cinezone.demo.util.AppConstants.FORMATO_TODOS)) ? " - " + b.getFormato() : "";
         tbp.setName(b.getName() + (tierName.isEmpty() ? "" : " (" + tierName + ")") + suffix);
         tbp.setTicketType(com.cinezone.demo.model.enums.TicketType.BENEFICIO);
-        tbp.setFormato(b.getFormato() != null ? b.getFormato() : "TODOS");
+        tbp.setFormato(b.getFormato() != null ? b.getFormato() : com.cinezone.demo.util.AppConstants.FORMATO_TODOS);
         tbp.setBasePrice(b.getPrice());
         tbp.setIsActive(true);
         tbp.setBeneficio(b);
@@ -92,13 +92,13 @@ public class LoyaltyService {
         String tierName = existing.getRequiredTier() != null && existing.getRequiredTier().getId() != null ? 
             tierRepository.findById(existing.getRequiredTier().getId()).map(LoyaltyTier::getName).orElse("") : "";
             
-        String suffix = (existing.getFormato() != null && !existing.getFormato().equals("TODOS")) ? " - " + existing.getFormato() : "";
+        String suffix = (existing.getFormato() != null && !existing.getFormato().equals(com.cinezone.demo.util.AppConstants.FORMATO_TODOS)) ? " - " + existing.getFormato() : "";
         
         if (existing.getTicketBasePriceId() != null) {
             TicketBasePrice tbp = ticketBasePriceRepository.findById(existing.getTicketBasePriceId()).orElse(null);
             if (tbp != null) {
                 tbp.setName(existing.getName() + (tierName.isEmpty() ? "" : " (" + tierName + ")") + suffix);
-                tbp.setFormato(existing.getFormato() != null ? existing.getFormato() : "TODOS");
+                tbp.setFormato(existing.getFormato() != null ? existing.getFormato() : com.cinezone.demo.util.AppConstants.FORMATO_TODOS);
                 tbp.setBasePrice(existing.getPrice());
                 tbp.setBeneficio(existing);
                 ticketBasePriceRepository.save(tbp);
@@ -107,7 +107,7 @@ public class LoyaltyService {
             TicketBasePrice tbp = new TicketBasePrice();
             tbp.setName(existing.getName() + (tierName.isEmpty() ? "" : " (" + tierName + ")") + suffix);
             tbp.setTicketType(com.cinezone.demo.model.enums.TicketType.BENEFICIO);
-            tbp.setFormato(existing.getFormato() != null ? existing.getFormato() : "TODOS");
+            tbp.setFormato(existing.getFormato() != null ? existing.getFormato() : com.cinezone.demo.util.AppConstants.FORMATO_TODOS);
             tbp.setBasePrice(existing.getPrice());
             tbp.setIsActive(true);
             tbp.setBeneficio(existing);

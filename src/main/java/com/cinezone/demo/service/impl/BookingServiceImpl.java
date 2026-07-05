@@ -245,7 +245,7 @@ public class BookingServiceImpl implements BookingService {
                 // Seguridad: Validar formato del beneficio
                 if (seatReq.beneficioId() != null) {
                     com.cinezone.demo.model.entity.TicketBenefit ben = ticketBenefitRepository.findById(seatReq.beneficioId()).orElse(null);
-                    if (ben != null && ben.getFormato() != null && !ben.getFormato().equals("TODOS")) {
+                    if (ben != null && ben.getFormato() != null && !ben.getFormato().equals(com.cinezone.demo.util.AppConstants.FORMATO_TODOS)) {
                         // Compatibilidad con "2D" y "FORMAT_2D"
                         String benFmt = ben.getFormato();
                         String showFmt = showtime.getFormatoProyeccion().name();
@@ -435,7 +435,7 @@ public class BookingServiceImpl implements BookingService {
             // Filtrar por Formato de Proyección
             // Permitimos coincidencias parciales para que "VIP 2D" coincida con "2D"
             String baseFormato = base.getFormato() != null ? base.getFormato().replace("FORMAT_", "").toUpperCase() : "2D";
-            if (!baseFormato.equals("TODOS") && !baseFormato.contains(showFormato)) {
+            if (!baseFormato.equals(com.cinezone.demo.util.AppConstants.FORMATO_TODOS) && !baseFormato.contains(showFormato)) {
                 continue;
             }
 

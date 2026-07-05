@@ -23,7 +23,6 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
     boolean existsByShowtimeIdAndEstadoIn(Long showtimeId, java.util.Collection<BookingStatus> estados);
 
-    // TODO: Remover PENDIENTE cuando se integre Mercado Pago
     // Consulta para obtener el total de ventas en un rango de fechas para boletas no canceladas
     @Query("SELECT SUM(b.montoTotal) FROM Booking b WHERE b.estado IN ('VALIDA', 'USADA') AND b.fechaCompra BETWEEN :start AND :end")
     BigDecimal calculateTotalSalesAll(
@@ -57,7 +56,6 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     @Query("SELECT SUM(b.montoTotal) FROM Booking b LEFT JOIN b.showtime s LEFT JOIN s.cinema c WHERE b.estado IN ('VALIDA', 'USADA') AND c.id = :sedeId")
     BigDecimal calculateRevenueByLocation(@Param("sedeId") Long sedeId);
 
-    // TODO: Remover PENDIENTE cuando se integre Mercado Pago
     // Ingresos por día en los últimos N días
     @Query("SELECT CAST(b.fechaCompra AS LocalDate), SUM(b.montoTotal) FROM Booking b " +
            "WHERE b.estado IN ('VALIDA', 'USADA') AND b.fechaCompra >= :since " +
