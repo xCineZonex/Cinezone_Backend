@@ -35,3 +35,15 @@ build/
 # Ignorar configuracion local del agente Antigravity
 .agents/
 mcp.json
+
+# Archivos basura / temporales
+*.class
+*.log
+*.log.*
+
+# Carpeta de uploads locales (imágenes van a Cloudinary)
+uploads/
+
+# Scripts de debugging puntuales
+DbDump.java
+DbDump.class
