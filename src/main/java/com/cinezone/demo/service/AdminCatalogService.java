@@ -9,9 +9,8 @@ public interface AdminCatalogService {
     com.cinezone.demo.dto.AuditoriumDTO createAuditoriumWithSeats(AuditoriumCreateDTO request);
     com.cinezone.demo.dto.ShowtimeDTO createShowtime(ShowtimeCreateDTO request);
     com.cinezone.demo.dto.MovieDTO changeMovieStatus(Long id, String estado);
-    MovieDistribution distributeMovie(Long movieId, Long sedeId);
-    void removeMovieDistribution(Long movieId, Long sedeId);
-    void removeMovieDistribution(Long movieId, Long sedeId);
+    com.cinezone.demo.model.entity.MovieDistribution distributeMovie(Long movieId, Long cinemaId);
+    void removeMovieDistribution(Long movieId, Long cinemaId);
     com.cinezone.demo.dto.AuditoriumDTO toggleAuditoriumMaintenance(Long auditoriumId, boolean enMantenimiento);
     com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO createProduct(com.cinezone.demo.dto.AdminCatalogDTOs.ProductCreateDTO request);
 
