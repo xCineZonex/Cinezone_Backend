@@ -57,7 +57,8 @@ public class AdminCatalogDTOs {
             Boolean esInsumo,
             String imagen,
             Long requiredTierId,
-            Long cinemaId
+            Long cinemaId,
+            Integer stock
     ) {
         public static ProductDTO fromEntity(com.cinezone.demo.model.entity.Product p) {
             if (p == null) return null;
@@ -65,7 +66,8 @@ public class AdminCatalogDTOs {
                 p.getId(), p.getNombre(), p.getDescripcion(), p.getPrecio(), p.getPrecioPuntos(),
                 p.getCategoria(), p.getDisponible(), p.getEsInsumo(), p.getImagen(),
                 p.getRequiredTier() != null ? p.getRequiredTier().getId() : null,
-                p.getCinema() != null ? p.getCinema().getId() : null
+                p.getCinema() != null ? p.getCinema().getId() : null,
+                null
             );
         }
     }

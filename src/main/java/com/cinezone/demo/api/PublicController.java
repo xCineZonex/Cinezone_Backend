@@ -146,7 +146,8 @@ public class PublicController {
                                 p.getPrecioPuntos(), p.getCategoria(), p.getDisponible(),
                                 p.getEsInsumo(), p.getImagen(),
                                 p.getRequiredTier() != null ? p.getRequiredTier().getId() : null,
-                                stock.getCinema() != null ? stock.getCinema().getId() : null
+                                stock.getCinema() != null ? stock.getCinema().getId() : null,
+                                stock.getStock()
                         );
                     })
                     .collect(Collectors.toList());
