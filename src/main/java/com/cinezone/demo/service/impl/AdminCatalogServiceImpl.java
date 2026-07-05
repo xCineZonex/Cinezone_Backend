@@ -113,6 +113,8 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         return com.cinezone.demo.dto.MovieDTO.fromEntity(movie);
     }
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AdminCatalogServiceImpl.class);
+
     @Override
     @Transactional
     public com.cinezone.demo.dto.CinemaDTO createCinema(CinemaCreateDTO request) {
@@ -122,23 +124,37 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 .ciudad(request.ciudad()).imagen(resolvedImagen).activa(true)
                 .build();
         cinema = cinemaRepository.save(cinema);
+        log.info("Sede creada con id={}, ahora propagando precios base...", cinema.getId());
 
-        java.util.List<TicketBasePrice> basePrices = ticketBasePriceRepository.findAll();
-        for (TicketBasePrice basePrice : basePrices) {
-            TicketTypeSedePrice sedePrice = TicketTypeSedePrice.builder()
-                    .cinema(cinema)
-                    .ticketBasePrice(basePrice)
-                    .localPrice(basePrice.getBasePrice())
-                    .isActive(basePrice.getIsActive())
-                    .priceMonday(basePrice.getPriceMonday())
-                    .priceTuesday(basePrice.getPriceTuesday())
-                    .priceWednesday(basePrice.getPriceWednesday())
-                    .priceThursday(basePrice.getPriceThursday())
-                    .priceFriday(basePrice.getPriceFriday())
-                    .priceSaturday(basePrice.getPriceSaturday())
-                    .priceSunday(basePrice.getPriceSunday())
-                    .build();
-            ticketTypeSedePriceRepository.save(sedePrice);
+        try {
+            java.util.List<TicketBasePrice> basePrices = ticketBasePriceRepository.findAll();
+            for (TicketBasePrice basePrice : basePrices) {
+                // Verificar si ya existe el precio para evitar duplicados
+                boolean exists = ticketTypeSedePriceRepository
+                        .findByCinemaIdAndTicketBasePriceId(cinema.getId(), basePrice.getId()).isPresent();
+                if (exists) continue;
+
+                TicketTypeSedePrice sedePrice = TicketTypeSedePrice.builder()
+                        .cinema(cinema)
+                        .ticketBasePrice(basePrice)
+                        .localPrice(basePrice.getBasePrice())
+                        .isActive(basePrice.getIsActive())
+                        .priceMonday(basePrice.getPriceMonday())
+                        .priceTuesday(basePrice.getPriceTuesday())
+                        .priceWednesday(basePrice.getPriceWednesday())
+                        .priceThursday(basePrice.getPriceThursday())
+                        .priceFriday(basePrice.getPriceFriday())
+                        .priceSaturday(basePrice.getPriceSaturday())
+                        .priceSunday(basePrice.getPriceSunday())
+                        .build();
+                ticketTypeSedePriceRepository.save(sedePrice);
+            }
+            log.info("Propagación de precios completada para sede id={}", cinema.getId());
+        } catch (Exception e) {
+            log.error("Error al propagar precios base a sede id={}: {}", cinema.getId(), e.getMessage(), e);
+            // La sede ya fue guardada, no se hace rollback del Cinema
+            // pero sí se lanza la excepción para que el admin sepa
+            throw new RuntimeException("Sede creada pero falló la propagación de precios: " + e.getMessage(), e);
         }
 
         return com.cinezone.demo.dto.CinemaDTO.fromEntity(cinema);
