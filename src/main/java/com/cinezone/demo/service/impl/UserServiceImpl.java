@@ -375,7 +375,13 @@ public class UserServiceImpl implements UserService {
              if (request.rol() == Role.JEFE_SALA && sedesToAssign.size() > 1) {
                  throw new BusinessRuleException("Un Jefe de Sala solo puede tener asignada una única sede.");
              }
+             
+             boolean sedesChanged = targetUser.getSedes().size() != sedesToAssign.size() || 
+                                    !targetUser.getSedes().containsAll(sedesToAssign);
              targetUser.setSedes(sedesToAssign);
+             if (sedesChanged) {
+                 targetUser.setSessionToken(null);
+             }
         }
 
         String tipoDoc = request.tipoDocumento() != null ? request.tipoDocumento() : (targetUser.getTipoDocumento() != null ? targetUser.getTipoDocumento() : "DNI");
@@ -387,6 +393,10 @@ public class UserServiceImpl implements UserService {
         targetUser.setTipoDocumento(tipoDoc);
         targetUser.setDni(request.dni());
         targetUser.setCelular(request.celular());
+        
+        if (targetUser.getRol() != request.rol()) {
+            targetUser.setSessionToken(null);
+        }
         targetUser.setRol(request.rol());
 
         targetUser = userRepository.save(targetUser);
