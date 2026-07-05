@@ -139,7 +139,17 @@ public class PriceCalculationService {
             if (b.getFaseComercial() != null && !b.getFaseComercial().equalsIgnoreCase(phase)) continue;
 
             String bFmt = b.getFormato() != null ? b.getFormato().replace("FORMAT_", "").toUpperCase() : "2D";
-            if (!bFmt.equals(com.cinezone.demo.util.AppConstants.FORMATO_TODOS) && !bFmt.contains(showFormato)) continue;
+            
+            boolean formatMatches = false;
+            if (bFmt.equals(com.cinezone.demo.util.AppConstants.FORMATO_TODOS)) {
+                formatMatches = true;
+            } else if (bFmt.contains(showFormato)) {
+                formatMatches = true;
+            } else if (salaTipo.equals("VIP") && bFmt.equals("VIP")) {
+                formatMatches = true;
+            }
+            
+            if (!formatMatches) continue;
 
             boolean isVipTicket = b.getName() != null && b.getName().toUpperCase().contains("VIP");
             if (salaTipo.equals("VIP") && !isVipTicket) continue;

@@ -435,7 +435,17 @@ public class BookingServiceImpl implements BookingService {
             // Filtrar por Formato de Proyección
             // Permitimos coincidencias parciales para que "VIP 2D" coincida con "2D"
             String baseFormato = base.getFormato() != null ? base.getFormato().replace("FORMAT_", "").toUpperCase() : "2D";
-            if (!baseFormato.equals(com.cinezone.demo.util.AppConstants.FORMATO_TODOS) && !baseFormato.contains(showFormato)) {
+            
+            boolean formatMatches = false;
+            if (baseFormato.equals(com.cinezone.demo.util.AppConstants.FORMATO_TODOS)) {
+                formatMatches = true;
+            } else if (baseFormato.contains(showFormato)) {
+                formatMatches = true;
+            } else if (salaTipo.equals("VIP") && baseFormato.equals("VIP")) {
+                formatMatches = true;
+            }
+
+            if (!formatMatches) {
                 continue;
             }
 
