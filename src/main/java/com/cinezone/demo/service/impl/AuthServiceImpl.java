@@ -33,6 +33,19 @@ public class AuthServiceImpl implements AuthService { // Aquí aplicamos tu patr
     @Override
     @Transactional
     public AuthResponseDTO registerClient(RegisterRequestDTO request) {
+        if (request.fechaNacimiento() != null) {
+            java.time.LocalDate hoy = java.time.LocalDate.now();
+            java.time.Period edad = java.time.Period.between(request.fechaNacimiento(), hoy);
+            if (edad.getYears() < 17) {
+                throw new BusinessRuleException("Debes tener al menos 17 años para registrarte.");
+            }
+            if (edad.getYears() > 80) {
+                throw new BusinessRuleException("La edad máxima permitida para registrarse es de 80 años.");
+            }
+        } else {
+            throw new BusinessRuleException("La fecha de nacimiento es obligatoria.");
+        }
+
         if ("DNI".equalsIgnoreCase(request.tipoDocumento())) {
             if (!request.dni().matches("\\d{8}")) {
                 throw new BusinessRuleException("El DNI debe tener exactamente 8 dígitos.");
@@ -85,6 +98,7 @@ public class AuthServiceImpl implements AuthService { // Aquí aplicamos tu patr
         userToSave.setTipoDocumento(request.tipoDocumento());
         userToSave.setDni(request.dni());
         userToSave.setGenero(request.genero());
+        userToSave.setFechaNacimiento(request.fechaNacimiento());
         userToSave.setContrasena(passwordEncoder.encode(request.contrasena()));
         userToSave.setRol(Role.CLIENT);
         userToSave.setTier(baseTier);
