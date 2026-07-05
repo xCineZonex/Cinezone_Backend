@@ -118,7 +118,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
     public com.cinezone.demo.dto.CinemaDTO createCinema(CinemaCreateDTO request) {
         Cinema cinema = Cinema.builder()
                 .nombre(request.nombre()).direccion(request.direccion())
-                .ciudad(request.ciudad()).imagen(request.imagen()).activa(true)
+                .ciudad(request.ciudad()).imagen(request.getResolvedImagen()).activa(true)
                 .build();
         cinema = cinemaRepository.save(cinema);
 
@@ -476,8 +476,8 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         if (request.nombre() != null) cinema.setNombre(request.nombre());
         if (request.direccion() != null) cinema.setDireccion(request.direccion());
         if (request.ciudad() != null) cinema.setCiudad(request.ciudad());
-        if (request.imagen() != null) cinema.setImagen(request.imagen());
         if (request.activa() != null) cinema.setActiva(request.activa());
+        if (request.getResolvedImagen() != null) cinema.setImagen(request.getResolvedImagen());
         return com.cinezone.demo.dto.CinemaDTO.fromEntity(cinemaRepository.save(cinema));
     }
 

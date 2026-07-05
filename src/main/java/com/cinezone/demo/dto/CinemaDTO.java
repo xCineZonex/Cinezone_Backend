@@ -6,6 +6,7 @@ public record CinemaDTO(
         String direccion,
         String ciudad,
         String imagen,
+        String posterUrl,
         Boolean activa
 ) {
     public static CinemaDTO fromEntity(com.cinezone.demo.model.entity.Cinema c) {
@@ -15,6 +16,7 @@ public record CinemaDTO(
                 c.getNombre(),
                 c.getDireccion(),
                 c.getCiudad(),
+                c.getImagen(),
                 c.getImagen(),
                 c.getActiva()
         );
