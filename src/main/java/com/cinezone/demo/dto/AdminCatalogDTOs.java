@@ -21,11 +21,7 @@ public class AdminCatalogDTOs {
 
     public record CinemaCreateDTO(
             @NotBlank String nombre, @NotBlank String direccion, @NotBlank String ciudad, String imagen, String posterUrl
-    ) {
-        public String getResolvedImagen() {
-            return imagen != null ? imagen : posterUrl;
-        }
-    }
+    ) {}
 
     public record AuditoriumCreateDTO(
             @NotBlank String nombre, @NotNull Integer capacidad, @NotBlank String tipo, @NotNull Long cinemaId
@@ -94,11 +90,7 @@ public class AdminCatalogDTOs {
 
     public record CinemaUpdateDTO(
             String nombre, String direccion, String ciudad, Boolean activa, String imagen, String posterUrl
-    ) {
-        public String getResolvedImagen() {
-            return imagen != null ? imagen : posterUrl;
-        }
-    }
+    ) {}
 
     public record AuditoriumUpdateDTO(
             String nombre, Integer capacidadTotal, Boolean activa
