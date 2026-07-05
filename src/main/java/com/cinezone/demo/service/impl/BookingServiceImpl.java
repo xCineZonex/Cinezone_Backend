@@ -404,6 +404,9 @@ public class BookingServiceImpl implements BookingService {
 
         Long sedeId = showtime.getCinema().getId();
         String salaTipo = showtime.getAuditorium().getTipo() != null ? showtime.getAuditorium().getTipo().toUpperCase() : "REGULAR";
+        if (showtime.getAuditorium().getNombre() != null && showtime.getAuditorium().getNombre().toUpperCase().contains("VIP")) {
+            salaTipo = "VIP";
+        }
 
         java.util.List<TicketBasePrice> basePrices = ticketBasePriceRepository.findAll();
         java.util.List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();

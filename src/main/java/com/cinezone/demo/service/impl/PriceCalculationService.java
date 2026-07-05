@@ -121,7 +121,10 @@ public class PriceCalculationService {
         String rawFormato = showtime.getFormatoProyeccion() != null ? showtime.getFormatoProyeccion().name() : "FORMAT_2D";
         String showFormato = rawFormato.replace("FORMAT_", "").toUpperCase();
         String salaTipo = showtime.getAuditorium().getTipo() != null ? showtime.getAuditorium().getTipo().toUpperCase() : "REGULAR";
-
+        if (showtime.getAuditorium().getNombre() != null && showtime.getAuditorium().getNombre().toUpperCase().contains("VIP")) {
+            salaTipo = "VIP";
+        }
+        
         String expectedPhase = "Cartelera";
         if (showtime.getMovie().getEstado() == com.cinezone.demo.model.enums.MovieStatus.ESTRENO) {
             expectedPhase = "Estreno";

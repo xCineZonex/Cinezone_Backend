@@ -205,10 +205,10 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             throw new com.cinezone.demo.exception.BusinessRuleException("Ya existe una sala con el nombre '" + request.nombre() + "' en esta sede.");
         }
 
-        // CORRECCIÓN 1: Usamos capacidadTotal() y quitamos el tipo() porque tu entidad no lo tiene
         Auditorium auditorium = Auditorium.builder()
                 .nombre(request.nombre())
                 .capacidadTotal(request.capacidad())
+                .tipo(request.tipo() != null ? request.tipo() : "REGULAR")
                 .cinema(cinema)
                 .activa(true)
                 .build();
