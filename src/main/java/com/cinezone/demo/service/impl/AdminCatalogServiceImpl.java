@@ -579,13 +579,23 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         }
 
         com.cinezone.demo.model.enums.ProjectionFormat formatoAsignado = request.formatoProyeccion();
-        if (formatoAsignado != null && "IMAX".equalsIgnoreCase(showtime.getAuditorium().getTipo())) {
+        
+        Auditorium targetAuditorium = showtime.getAuditorium();
+        if (request.auditoriumId() != null && !request.auditoriumId().equals(showtime.getAuditorium().getId())) {
+            targetAuditorium = auditoriumRepository.findById(request.auditoriumId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Nueva sala no encontrada"));
+            if (!targetAuditorium.getCinema().getId().equals(showtime.getCinema().getId())) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("La nueva sala debe pertenecer a la misma sede.");
+            }
+        }
+
+        if (formatoAsignado != null && "IMAX".equalsIgnoreCase(targetAuditorium.getTipo())) {
             formatoAsignado = com.cinezone.demo.model.enums.ProjectionFormat.IMAX;
         }
 
         // VALIDACIÓN DEL FORMATO DE PROYECCIÓN CONTRA EL TIPO DE SALA SI SE ACTUALIZA
         if (formatoAsignado != null) {
-            validarFormatoParaSala(showtime.getAuditorium().getTipo(), formatoAsignado);
+            validarFormatoParaSala(targetAuditorium.getTipo(), formatoAsignado);
         }
 
         boolean hasBookings = bookingRepository.existsByShowtimeIdAndEstadoIn(
@@ -602,6 +612,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         if (request.fechaHora() != null) showtime.setFechaHora(request.fechaHora());
         if (request.idioma() != null) showtime.setIdioma(request.idioma());
         if (formatoAsignado != null) showtime.setFormatoProyeccion(formatoAsignado);
+        if (request.auditoriumId() != null) showtime.setAuditorium(targetAuditorium);
         if (request.activa() != null) {
             showtime.setActiva(request.activa());
         }

@@ -99,7 +99,7 @@ public class AdminCatalogDTOs {
     ) {}
 
     public record ShowtimeUpdateDTO(
-            LocalDateTime fechaHora, Language idioma, ProjectionFormat formatoProyeccion, Boolean activa
+            Long auditoriumId, LocalDateTime fechaHora, Language idioma, ProjectionFormat formatoProyeccion, Boolean activa
     ) {}
 
     public record SeatUpdateDTO(
