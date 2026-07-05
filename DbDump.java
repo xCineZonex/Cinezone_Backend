@@ -8,10 +8,10 @@ public class DbDump {
     public static void main(String[] args) {
         try {
             Class.forName("org.postgresql.Driver");
-            String url = "jdbc:postgresql://ep-lively-moon-ajv7wquu-pooler.c-3.us-east-2.aws.neon.tech/neondb?sslmode=require&channelBinding=require";
+            String url = System.getenv("DB_URL");
             Properties props = new Properties();
-            props.setProperty("user", "neondb_owner");
-            props.setProperty("password", "npg_wqy0ivcI6MeG");
+            props.setProperty("user", System.getenv("DB_USERNAME"));
+            props.setProperty("password", System.getenv("DB_PASSWORD"));
             try (Connection conn = DriverManager.getConnection(url, props);
                  Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery("SELECT * FROM ticket_base_prices_v2")) {
