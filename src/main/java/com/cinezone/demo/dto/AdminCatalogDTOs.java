@@ -42,7 +42,8 @@ public class AdminCatalogDTOs {
         String imagen,
         Boolean esInsumo,
         Integer stockGenerado,
-        Long cinemaId
+        Long cinemaId,
+        java.util.List<IngredientDTO> ingredients
     ) {}
 
     public record ProductDTO(
@@ -110,7 +111,8 @@ public class AdminCatalogDTOs {
             Integer precioPuntos,
             com.cinezone.demo.model.enums.ProductCategory categoria,
             Long requiredTierId,
-            String imagen
+            String imagen,
+            java.util.List<IngredientDTO> ingredients
     ) {}
 
     // Para el editor de lienzo interactivo

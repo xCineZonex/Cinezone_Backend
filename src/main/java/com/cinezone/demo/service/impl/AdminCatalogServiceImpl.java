@@ -92,6 +92,11 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         LocalDate fechaFin = request.fechaFinCartelera() != null 
             ? request.fechaFinCartelera() 
             : request.fechaEstreno().plusDays(21);
+            
+        com.cinezone.demo.model.enums.MovieStatus initialStatus = request.estado() != null ? request.estado() : MovieStatus.EN_CARTELERA;
+        if (initialStatus == MovieStatus.EN_CARTELERA && request.fechaEstreno().isAfter(LocalDate.now())) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("No se puede colocar una película 'EN CARTELERA' si su fecha de estreno es posterior a hoy. Use 'PRÓXIMAMENTE' o 'PREVENTA'.");
+        }
 
         Movie movie = Movie.builder()
                 .titulo(request.titulo()).sinopsis(request.sinopsis())
@@ -99,7 +104,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 .clasificacion(request.clasificacion()).idioma(request.idioma())
                 .posterUrl(request.posterUrl()).trailerUrl(request.trailerUrl())
                 .fechaEstreno(request.fechaEstreno())
-                .estado(request.estado() != null ? request.estado() : MovieStatus.EN_CARTELERA)
+                .estado(initialStatus)
                 .fechaFinCartelera(fechaFin)
                 .build();
         movie = movieRepository.save(movie);
@@ -363,7 +368,17 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
             product.setEsInsumo(false);
         }
         
+        if (!Boolean.TRUE.equals(product.getEsInsumo())) {
+            if (request.ingredients() == null || request.ingredients().isEmpty()) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("Para garantizar un correcto descuento del inventario, el sistema debe exigir obligatoriamente la vinculación de insumos globales al crear productos individuales o combos.");
+            }
+        }
+        
         product = productRepository.save(product);
+        
+        if (!Boolean.TRUE.equals(product.getEsInsumo())) {
+            defineComboRecipe(new com.cinezone.demo.dto.AdminCatalogDTOs.ComboRecipeDTO(product.getId(), request.ingredients()));
+        }
 
         // Si se define un stock inicial y una sede, inicializarlo de inmediato
         if (request.stockGenerado() != null && request.stockGenerado() > 0 && request.cinemaId() != null) {
@@ -389,6 +404,11 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         if (request.estado() != null) {
             com.cinezone.demo.model.enums.MovieStatus currentStatus = movie.getEstado();
             com.cinezone.demo.model.enums.MovieStatus newStatus = request.estado();
+            
+            LocalDate effectiveFechaEstreno = request.fechaEstreno() != null ? request.fechaEstreno() : movie.getFechaEstreno();
+            if (newStatus == MovieStatus.EN_CARTELERA && effectiveFechaEstreno != null && effectiveFechaEstreno.isAfter(LocalDate.now())) {
+                throw new com.cinezone.demo.exception.BusinessRuleException("No se puede colocar una película 'EN CARTELERA' si su fecha de estreno es posterior a hoy. Use 'PRÓXIMAMENTE' o 'PREVENTA'.");
+            }
             
             if (currentStatus == com.cinezone.demo.model.enums.MovieStatus.EN_CARTELERA) {
                 if (newStatus == com.cinezone.demo.model.enums.MovieStatus.PRE_VENTA || newStatus == com.cinezone.demo.model.enums.MovieStatus.PROXIMAMENTE) {
@@ -723,6 +743,16 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         if (request.imagen() != null) {
             product.setImagen(request.imagen());
         }
+        
+        if (!Boolean.TRUE.equals(product.getEsInsumo())) {
+            if (request.ingredients() != null) {
+                if (request.ingredients().isEmpty()) {
+                    throw new com.cinezone.demo.exception.BusinessRuleException("Para garantizar un correcto descuento del inventario, el sistema debe exigir obligatoriamente la vinculación de insumos globales al crear o editar productos individuales o combos.");
+                }
+                defineComboRecipe(new com.cinezone.demo.dto.AdminCatalogDTOs.ComboRecipeDTO(product.getId(), request.ingredients()));
+            }
+        }
+        
         product = productRepository.save(product);
         auditService.logAction("Product", product.getId(), "UPDATE", getCurrentUser(), "Producto actualizado");
         return com.cinezone.demo.dto.AdminCatalogDTOs.ProductDTO.fromEntity(product);
