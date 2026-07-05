@@ -87,12 +87,44 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         }
     }
 
+    /**
+     * Valida las fechas de una película:
+     * 1. fechaEstreno no puede ser más de 180 días en el pasado.
+     * 2. fechaFinCartelera no puede ser anterior a fechaEstreno.
+     */
+    private void validarFechasPelicula(LocalDate fechaEstreno, LocalDate fechaFin) {
+        final int MAX_DIAS_PASADO = 180;
+        LocalDate hoy = LocalDate.now();
+
+        if (fechaEstreno != null) {
+            LocalDate limiteMinimo = hoy.minusDays(MAX_DIAS_PASADO);
+            if (fechaEstreno.isBefore(limiteMinimo)) {
+                throw new com.cinezone.demo.exception.BusinessRuleException(
+                    "La fecha de estreno no puede ser anterior a " + MAX_DIAS_PASADO +
+                    " días desde hoy (" + limiteMinimo + "). Si la película ya tiene más de 6 meses en cartelera, contacte con soporte."
+                );
+            }
+        }
+
+        if (fechaEstreno != null && fechaFin != null && fechaFin.isBefore(fechaEstreno)) {
+            throw new com.cinezone.demo.exception.BusinessRuleException(
+                "La fecha de fin de cartelera (" + fechaFin +
+                ") no puede ser anterior a la fecha de estreno (" + fechaEstreno + ")."
+            );
+        }
+    }
+
+
+
     @Override
     @Transactional
     public com.cinezone.demo.dto.MovieDTO createMovie(MovieCreateDTO request) {
         LocalDate fechaFin = request.fechaFinCartelera() != null 
             ? request.fechaFinCartelera() 
             : request.fechaEstreno().plusDays(21);
+
+        // Validar: estreno no más de 180 días en el pasado y fin >= estreno
+        validarFechasPelicula(request.fechaEstreno(), fechaFin);
             
         com.cinezone.demo.model.enums.MovieStatus initialStatus = request.estado() != null ? request.estado() : MovieStatus.EN_CARTELERA;
         if (initialStatus == MovieStatus.EN_CARTELERA && request.fechaEstreno().isAfter(LocalDate.now())) {
@@ -112,6 +144,7 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         auditService.logAction("Movie", movie.getId(), "CREATE", getCurrentUser(), "Película creada: " + movie.getTitulo());
         return com.cinezone.demo.dto.MovieDTO.fromEntity(movie);
     }
+
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AdminCatalogServiceImpl.class);
 
@@ -439,8 +472,22 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
     public com.cinezone.demo.dto.MovieDTO updateMovie(Long id, MovieUpdateDTO request) {
         Movie movie = movieRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Película no encontrada"));
         
+        // Validar fechas con los valores efectivos (request si vienen, sino los actuales)
+        LocalDate efectivaEstreno = request.fechaEstreno() != null ? request.fechaEstreno() : movie.getFechaEstreno();
+        LocalDate efectivaFin    = request.fechaFinCartelera() != null ? request.fechaFinCartelera() : movie.getFechaFinCartelera();
+        // Solo valida el límite de 180 días si se está cambiando la fecha de estreno
+        validarFechasPelicula(request.fechaEstreno(), efectivaFin);
+        // Siempre valida coherencia estreno vs fin con valores efectivos
+        if (efectivaFin != null && efectivaEstreno != null && efectivaFin.isBefore(efectivaEstreno)) {
+            throw new com.cinezone.demo.exception.BusinessRuleException(
+                "La fecha de fin de cartelera (" + efectivaFin +
+                ") no puede ser anterior a la fecha de estreno (" + efectivaEstreno + ")."
+            );
+        }
+
         if (request.estado() != null) {
             com.cinezone.demo.model.enums.MovieStatus currentStatus = movie.getEstado();
+
             com.cinezone.demo.model.enums.MovieStatus newStatus = request.estado();
             
             LocalDate effectiveFechaEstreno = request.fechaEstreno() != null ? request.fechaEstreno() : movie.getFechaEstreno();
