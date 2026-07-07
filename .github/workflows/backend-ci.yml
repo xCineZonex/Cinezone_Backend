@@ -80,6 +80,18 @@ jobs:
       - name: "Autenticar Docker con Artifact Registry"
         run: gcloud auth configure-docker ${{ env.ARTIFACT_REGISTRY }} --quiet
 
+      # ── Crear repositorio en Artifact Registry si no existe ──
+      - name: "Crear repositorio en Artifact Registry (si no existe)"
+        run: |
+          gcloud artifacts repositories describe ${{ env.REPOSITORY }} \
+            --location=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+          || gcloud artifacts repositories create ${{ env.REPOSITORY }} \
+            --repository-format=docker \
+            --location=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --description="Repositorio Docker para CineZone Backend"
+
       # ── Construir y publicar la imagen Docker ──
       - name: "Build de imagen Docker"
         run: |
