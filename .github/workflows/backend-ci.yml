@@ -119,14 +119,14 @@ jobs:
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --region=${{ env.REGION }} \
             --project=${{ env.PROJECT_ID }} \
-            --port=8080 \
             --min-instances=0 \
             --max-instances=3 \
-            --memory=768Mi \
-            --cpu=1 \
             --allow-unauthenticated \
             --container=backend \
               --image=${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ github.sha }} \
+              --port=8080 \
+              --cpu=1 \
+              --memory=768Mi \
               --set-env-vars="DB_URL=${{ secrets.DB_URL }}" \
               --set-env-vars="DB_USERNAME=${{ secrets.DB_USERNAME }}" \
               --set-env-vars="DB_PASSWORD=${{ secrets.DB_PASSWORD }}" \
