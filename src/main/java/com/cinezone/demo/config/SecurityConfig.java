@@ -36,6 +36,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 1. Rutas Públicas (Login, Registro y Documentación)
                         .requestMatchers(
+                                "/actuator/prometheus",
+                                "/actuator/health",
                                 "/api/v1/auth/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",

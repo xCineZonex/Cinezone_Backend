@@ -105,33 +105,43 @@ jobs:
           docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ github.sha }}
           docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:latest
 
-      # ── Desplegar en Cloud Run ──
-      # Las variables de entorno vienen de los Secrets de GitHub y se inyectan
-      # directamente en el contenedor de Cloud Run. Nunca se exponen en el YAML.
-      - name: "Desplegar en Cloud Run"
-        uses: google-github-actions/deploy-cloudrun@v2
-        with:
-          service: ${{ env.SERVICE_NAME }}
-          region: ${{ env.REGION }}
-          image: ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ github.sha }}
-          env_vars: |
-            DB_URL=${{ secrets.DB_URL }}
-            DB_USERNAME=${{ secrets.DB_USERNAME }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            REDIS_HOST=${{ secrets.REDIS_HOST }}
-            REDIS_PORT=${{ secrets.REDIS_PORT }}
-            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-            CLOUDINARY_URL=${{ secrets.CLOUDINARY_URL }}
-            MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
-            MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
-            MP_ACCESS_TOKEN=${{ secrets.MP_ACCESS_TOKEN }}
-            MP_PUBLIC_KEY=${{ secrets.MP_PUBLIC_KEY }}
-          flags: |
-            --port=8080
-            --min-instances=0
-            --max-instances=3
-            --memory=512Mi
-            --cpu=1
-            --allow-unauthenticated
+      # ── Construir y publicar la imagen de Grafana Alloy ──
+      - name: "Build y Push imagen de Grafana Alloy"
+        run: |
+          docker build \
+            -t ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/cinezone-alloy:latest \
+            ./alloy
+          docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/cinezone-alloy:latest
+
+      # ── Desplegar en Cloud Run (con sidecar Alloy) ──
+      - name: "Desplegar en Cloud Run (con sidecar Alloy)"
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --port=8080 \
+            --min-instances=0 \
+            --max-instances=3 \
+            --memory=768Mi \
+            --cpu=1 \
+            --allow-unauthenticated \
+            --container=backend \
+              --image=${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ github.sha }} \
+              --set-env-vars="DB_URL=${{ secrets.DB_URL }}" \
+              --set-env-vars="DB_USERNAME=${{ secrets.DB_USERNAME }}" \
+              --set-env-vars="DB_PASSWORD=${{ secrets.DB_PASSWORD }}" \
+              --set-env-vars="REDIS_HOST=${{ secrets.REDIS_HOST }}" \
+              --set-env-vars="REDIS_PORT=${{ secrets.REDIS_PORT }}" \
+              --set-env-vars="REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" \
+              --set-env-vars="CLOUDINARY_URL=${{ secrets.CLOUDINARY_URL }}" \
+              --set-env-vars="MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" \
+              --set-env-vars="MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" \
+              --set-env-vars="JWT_SECRET=${{ secrets.JWT_SECRET }}" \
+              --set-env-vars="FRONTEND_URL=${{ secrets.FRONTEND_URL }}" \
+              --set-env-vars="MP_ACCESS_TOKEN=${{ secrets.MP_ACCESS_TOKEN }}" \
+              --set-env-vars="MP_PUBLIC_KEY=${{ secrets.MP_PUBLIC_KEY }}" \
+            --container=alloy \
+              --image=${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/cinezone-alloy:latest \
+              --set-env-vars="GRAFANA_REMOTE_WRITE_URL=${{ secrets.GRAFANA_REMOTE_WRITE_URL }}" \
+              --set-env-vars="GRAFANA_USERNAME=${{ secrets.GRAFANA_USERNAME }}" \
+              --set-env-vars="GRAFANA_API_TOKEN=${{ secrets.GRAFANA_API_TOKEN }}"
