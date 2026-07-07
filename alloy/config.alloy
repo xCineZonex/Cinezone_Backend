@@ -1,7 +1,8 @@
 prometheus.scrape "cinezone_backend" {
   targets = [{
-    __address__ = "localhost:8080",
+    __address__ = string.trimprefix(env("BACKEND_URL"), "https://"),
   }]
+  scheme          = "https"
   metrics_path    = "/actuator/prometheus"
   scrape_interval = "15s"
   forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
