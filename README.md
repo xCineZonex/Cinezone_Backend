@@ -41,8 +41,8 @@ CineZone Backend es una API REST completa desarrollada con Spring Boot 3 que ges
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        CLIENTES                              │
-│          Frontend (Vercel)  │  Apps Móviles  │  Staff        │
+│                        CLIENTES                             │
+│                 Frontend (Vercel)                           |
 └──────────────────────┬──────────────────────────────────────┘
                        │ HTTPS
                        ▼
