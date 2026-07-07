@@ -95,13 +95,6 @@ jobs:
           docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ github.sha }}
           docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:latest
 
-      # ── Generar credencial OTLP (Base64 de usuario:token) ──
-      - name: "Generar credencial OTLP para Grafana Cloud"
-        id: otlp
-        run: |
-          AUTH=$(echo -n "${{ secrets.GRAFANA_USERNAME }}:${{ secrets.GRAFANA_API_TOKEN }}" | base64 -w 0)
-          echo "auth=$AUTH" >> $GITHUB_OUTPUT
-
       # ── Desplegar backend en Cloud Run ──
       - name: "Desplegar en Cloud Run"
         uses: google-github-actions/deploy-cloudrun@v2
@@ -124,7 +117,7 @@ jobs:
             MP_ACCESS_TOKEN=${{ secrets.MP_ACCESS_TOKEN }}
             MP_PUBLIC_KEY=${{ secrets.MP_PUBLIC_KEY }}
             ACTUATOR_TOKEN=${{ secrets.ACTUATOR_TOKEN }}
-            GRAFANA_OTLP_AUTH=Basic ${{ steps.otlp.outputs.auth }}
+            GRAFANA_API_TOKEN=${{ secrets.GRAFANA_API_TOKEN }}
           flags: |
             --port=8080
             --min-instances=0
