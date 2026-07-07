@@ -73,10 +73,10 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
-		<!-- Micrometer Prometheus: formatea métricas en formato Prometheus -->
+		<!-- Micrometer OTLP: envía métricas directamente a Grafana Cloud (push) -->
 		<dependency>
 			<groupId>io.micrometer</groupId>
-			<artifactId>micrometer-registry-prometheus</artifactId>
+			<artifactId>micrometer-registry-otlp</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>

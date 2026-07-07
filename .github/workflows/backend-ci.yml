@@ -17,17 +17,16 @@ permissions:
   id-token: write
 
 env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}          # ID del proyecto en Google Cloud
-  REGION: us-east1                                     # Región de Cloud Run (misma que el servicio existente)
-  SERVICE_NAME: cinezone-backend                       # Nombre del servicio en Cloud Run
-  ARTIFACT_REGISTRY: us-east1-docker.pkg.dev          # Host de Artifact Registry
-  REPOSITORY: cinezone-repo                            # Nombre del repositorio en Artifact Registry
-  IMAGE: cinezone-backend                              # Nombre de la imagen Docker
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: us-east1
+  SERVICE_NAME: cinezone-backend
+  ARTIFACT_REGISTRY: us-east1-docker.pkg.dev
+  REPOSITORY: cinezone-repo
+  IMAGE: cinezone-backend
 
 jobs:
   # ─────────────────────────────────────────────
   # JOB 1: CI — Compilar y testear
-  # Corre en push Y en pull_request
   # ─────────────────────────────────────────────
   build-and-test:
     name: "Build & Test"
@@ -50,37 +49,29 @@ jobs:
   # ─────────────────────────────────────────────
   # JOB 2: CD — Build Docker + Deploy a Cloud Run
   # Solo corre en push a main/master (no en PRs)
-  # Depende de que build-and-test pase primero
   # ─────────────────────────────────────────────
   deploy:
     name: "Deploy a Google Cloud Run"
     runs-on: ubuntu-latest
     needs: build-and-test
-    # Solo ejecutar en push directo a main/master, nunca en PRs
     if: github.event_name == 'push'
 
     steps:
       - name: "Checkout del repositorio"
         uses: actions/checkout@v4
 
-      # ── Autenticacion con Google Cloud via OIDC (sin credenciales almacenadas) ──
       - name: "Autenticar en Google Cloud (Workload Identity Federation)"
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          # Formato: projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL/providers/PROVIDER
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-          # Formato: github-actions@PROJECT_ID.iam.gserviceaccount.com
 
-      # ── Configurar SDK de Google Cloud ──
       - name: "Configurar Google Cloud SDK"
         uses: google-github-actions/setup-gcloud@v2
 
-      # ── Autenticar Docker con Artifact Registry ──
       - name: "Autenticar Docker con Artifact Registry"
         run: gcloud auth configure-docker ${{ env.ARTIFACT_REGISTRY }} --quiet
 
-      # ── Crear repositorio en Artifact Registry si no existe ──
       - name: "Crear repositorio en Artifact Registry (si no existe)"
         run: |
           gcloud artifacts repositories describe ${{ env.REPOSITORY }} \
@@ -92,7 +83,6 @@ jobs:
             --project=${{ env.PROJECT_ID }} \
             --description="Repositorio Docker para CineZone Backend"
 
-      # ── Construir y publicar la imagen Docker ──
       - name: "Build de imagen Docker"
         run: |
           docker build \
@@ -105,16 +95,15 @@ jobs:
           docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ github.sha }}
           docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:latest
 
-      # ── Construir y publicar la imagen de Grafana Alloy ──
-      - name: "Build y Push imagen de Grafana Alloy"
+      # ── Generar credencial OTLP (Base64 de usuario:token) ──
+      - name: "Generar credencial OTLP para Grafana Cloud"
+        id: otlp
         run: |
-          docker build \
-            -t ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/cinezone-alloy:latest \
-            ./alloy
-          docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/cinezone-alloy:latest
+          AUTH=$(echo -n "${{ secrets.GRAFANA_USERNAME }}:${{ secrets.GRAFANA_API_TOKEN }}" | base64 -w 0)
+          echo "auth=$AUTH" >> $GITHUB_OUTPUT
 
       # ── Desplegar backend en Cloud Run ──
-      - name: "Desplegar backend en Cloud Run"
+      - name: "Desplegar en Cloud Run"
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: ${{ env.SERVICE_NAME }}
@@ -135,6 +124,7 @@ jobs:
             MP_ACCESS_TOKEN=${{ secrets.MP_ACCESS_TOKEN }}
             MP_PUBLIC_KEY=${{ secrets.MP_PUBLIC_KEY }}
             ACTUATOR_TOKEN=${{ secrets.ACTUATOR_TOKEN }}
+            GRAFANA_OTLP_AUTH=Basic ${{ steps.otlp.outputs.auth }}
           flags: |
             --port=8080
             --min-instances=0
@@ -142,31 +132,3 @@ jobs:
             --memory=768Mi
             --cpu=1
             --allow-unauthenticated
-
-      # ── Obtener la URL del backend ya desplegado ──
-      - name: "Obtener URL del backend"
-        id: backend-url
-        run: |
-          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
-            --region=${{ env.REGION }} \
-            --project=${{ env.PROJECT_ID }} \
-            --format="value(status.url)")
-          echo "url=$URL" >> $GITHUB_OUTPUT
-
-      # ── Desplegar Grafana Alloy como servicio separado ──
-      - name: "Desplegar Grafana Alloy en Cloud Run"
-        run: |
-          gcloud run deploy cinezone-alloy \
-            --region=${{ env.REGION }} \
-            --project=${{ env.PROJECT_ID }} \
-            --image=${{ env.ARTIFACT_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/cinezone-alloy:latest \
-            --min-instances=1 \
-            --max-instances=1 \
-            --memory=256Mi \
-            --cpu=1 \
-            --no-allow-unauthenticated \
-            --set-env-vars="BACKEND_URL=${{ steps.backend-url.outputs.url }}" \
-            --set-env-vars="ACTUATOR_TOKEN=${{ secrets.ACTUATOR_TOKEN }}" \
-            --set-env-vars="GRAFANA_REMOTE_WRITE_URL=${{ secrets.GRAFANA_REMOTE_WRITE_URL }}" \
-            --set-env-vars="GRAFANA_USERNAME=${{ secrets.GRAFANA_USERNAME }}" \
-            --set-env-vars="GRAFANA_API_TOKEN=${{ secrets.GRAFANA_API_TOKEN }}"
