@@ -5,7 +5,13 @@ prometheus.scrape "cinezone_backend" {
   scheme          = "https"
   metrics_path    = "/actuator/prometheus"
   scrape_interval = "15s"
-  forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
+
+  authorization {
+    type        = "Bearer"
+    credentials = env("ACTUATOR_TOKEN")
+  }
+
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
 }
 
 prometheus.remote_write "grafana_cloud" {

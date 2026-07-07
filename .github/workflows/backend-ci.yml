@@ -134,6 +134,7 @@ jobs:
             FRONTEND_URL=${{ secrets.FRONTEND_URL }}
             MP_ACCESS_TOKEN=${{ secrets.MP_ACCESS_TOKEN }}
             MP_PUBLIC_KEY=${{ secrets.MP_PUBLIC_KEY }}
+            ACTUATOR_TOKEN=${{ secrets.ACTUATOR_TOKEN }}
           flags: |
             --port=8080
             --min-instances=0
@@ -165,6 +166,7 @@ jobs:
             --cpu=1 \
             --no-allow-unauthenticated \
             --set-env-vars="BACKEND_URL=${{ steps.backend-url.outputs.url }}" \
+            --set-env-vars="ACTUATOR_TOKEN=${{ secrets.ACTUATOR_TOKEN }}" \
             --set-env-vars="GRAFANA_REMOTE_WRITE_URL=${{ secrets.GRAFANA_REMOTE_WRITE_URL }}" \
             --set-env-vars="GRAFANA_USERNAME=${{ secrets.GRAFANA_USERNAME }}" \
             --set-env-vars="GRAFANA_API_TOKEN=${{ secrets.GRAFANA_API_TOKEN }}"
