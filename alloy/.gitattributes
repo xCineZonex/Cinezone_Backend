@@ -1,0 +1,3 @@
+# Forzar LF para scripts shell (evita problemas CRLF en contenedores Linux)
+*.sh text eol=lf
+*.alloy text eol=lf
