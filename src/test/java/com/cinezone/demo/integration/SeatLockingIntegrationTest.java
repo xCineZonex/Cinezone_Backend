@@ -80,8 +80,8 @@ public class SeatLockingIntegrationTest {
     void setUp() {
         redisTemplate.getConnectionFactory().getConnection().flushDb();
         
-        user1 = userRepository.save(User.builder().dni("11111111").correo("user1@test.com").contrasena("pass").rol(com.cinezone.demo.model.enums.Role.CLIENT).build());
-        user2 = userRepository.save(User.builder().dni("22222222").correo("user2@test.com").contrasena("pass").rol(com.cinezone.demo.model.enums.Role.CLIENT).build());
+        user1 = userRepository.save(User.builder().dni("11111111").nombre("Test").apellido("User").correo("user1@test.com").contrasena("pass").rol(com.cinezone.demo.model.enums.Role.CLIENT).build());
+        user2 = userRepository.save(User.builder().dni("22222222").nombre("Test").apellido("User2").correo("user2@test.com").contrasena("pass").rol(com.cinezone.demo.model.enums.Role.CLIENT).build());
 
         Movie movie = movieRepository.save(Movie.builder().titulo("Redis Test Movie").duracionMinutos(120).estado(com.cinezone.demo.model.enums.MovieStatus.EN_CARTELERA).build());
         Cinema cinema = cinemaRepository.save(Cinema.builder().nombre("Sede Redis").activa(true).build());
