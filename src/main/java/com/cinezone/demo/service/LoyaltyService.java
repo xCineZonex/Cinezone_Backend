@@ -54,42 +54,78 @@ public class LoyaltyService {
         return com.cinezone.demo.model.enums.TipoEntrada.GENERAL_2D;
     }
 
+
     @org.springframework.transaction.annotation.Transactional
     public void assignBirthdayBenefitIfApplicable(User user) {
         if (!Boolean.TRUE.equals(user.getEsSocio()) || user.getFechaNacimiento() == null) return;
-        
+
         java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("America/Lima"));
         int birthMonth = user.getFechaNacimiento().getMonthValue();
-        int birthDay = user.getFechaNacimiento().getDayOfMonth();
-        
+        int birthDay   = user.getFechaNacimiento().getDayOfMonth();
+
         // Regla para nacidos el 29 de febrero en años no bisiestos
         if (birthMonth == 2 && birthDay == 29 && !today.isLeapYear()) {
             birthDay = 28;
         }
 
         if (birthMonth == today.getMonthValue() && birthDay == today.getDayOfMonth()) {
-            
+
             java.time.LocalDateTime startOfYear = java.time.LocalDate.of(today.getYear(), 1, 1).atStartOfDay();
             boolean alreadyReceived = pendingBenefitRepository.existsByUserAndTipoBeneficioAndFechaGanadoAfter(
-                user, "ENTRADA_GRATIS_CUMPLEAÑOS", startOfYear);
-                
+                    user, "ENTRADA_GRATIS_CUMPLEAÑOS", startOfYear);
+
             if (!alreadyReceived) {
-                com.cinezone.demo.model.enums.TipoEntrada tipo = determinarTipoEntrada(user);
-                String desc = tipo == com.cinezone.demo.model.enums.TipoEntrada.VIP ? 
-                    "¡Feliz Cumpleaños! Tienes una entrada VIP gratis." : 
-                    "¡Feliz Cumpleaños! Tienes una entrada 2D gratis.";
-                    
-                com.cinezone.demo.model.entity.PendingBenefit benefit = com.cinezone.demo.model.entity.PendingBenefit.builder()
-                    .user(user)
-                    .tipoBeneficio("ENTRADA_GRATIS_CUMPLEAÑOS")
-                    .descripcion(desc)
-                    .estado(com.cinezone.demo.model.enums.BenefitStatus.DISPONIBLE)
-                    .fechaGanado(java.time.LocalDateTime.now(java.time.ZoneId.of("America/Lima")))
-                    .fechaExpiracion(today.plusDays(3).atTime(23, 59, 59))
-                    .tipoEntrada(tipo)
-                    .build();
+                // ── Tabla de verdad por nivel + toggle de sede ──────────────
+                // Negro + sede VIP habilitada  → 1 entrada VIP
+                // Negro + sede SIN VIP         → 2 entradas 2D
+                // Dorado (cualquier sede)      → 2 entradas 2D
+                // Azul   (cualquier sede)      → 1 entrada 2D
+                // ────────────────────────────────────────────────────────────
+                String tierName = user.getTier() != null ? user.getTier().getName() : "Azul";
+                boolean isNegro  = "Negro".equalsIgnoreCase(tierName);
+                boolean isDorado = "Dorado".equalsIgnoreCase(tierName);
+                boolean sedeVipEnabled = user.getSedes() != null &&
+                        user.getSedes().stream().anyMatch(s -> Boolean.TRUE.equals(s.getVipCumpleanosHabilitado()));
+
+                com.cinezone.demo.model.enums.TipoEntrada tipo;
+                int cantidad;
+                String desc;
+
+                if (isNegro && sedeVipEnabled) {
+                    tipo     = com.cinezone.demo.model.enums.TipoEntrada.VIP;
+                    cantidad = 1;
+                    desc     = "¡Feliz Cumpleaños! Tienes 1 entrada VIP gratis (Nivel Negro).";
+                } else if (isNegro) {
+                    tipo     = com.cinezone.demo.model.enums.TipoEntrada.GENERAL_2D;
+                    cantidad = 2;
+                    desc     = "¡Feliz Cumpleaños! Tienes 2 entradas 2D gratis (Nivel Negro).";
+                } else if (isDorado) {
+                    tipo     = com.cinezone.demo.model.enums.TipoEntrada.GENERAL_2D;
+                    cantidad = 2;
+                    desc     = "¡Feliz Cumpleaños! Tienes 2 entradas 2D gratis (Nivel Dorado).";
+                } else {
+                    // Azul u otro nivel sin definir → mínimo garantizado
+                    tipo     = com.cinezone.demo.model.enums.TipoEntrada.GENERAL_2D;
+                    cantidad = 1;
+                    desc     = "¡Feliz Cumpleaños! Tienes 1 entrada 2D gratis (Nivel Azul).";
+                }
+
+                com.cinezone.demo.model.entity.PendingBenefit benefit =
+                        com.cinezone.demo.model.entity.PendingBenefit.builder()
+                                .user(user)
+                                .tipoBeneficio("ENTRADA_GRATIS_CUMPLEAÑOS")
+                                .descripcion(desc)
+                                .estado(com.cinezone.demo.model.enums.BenefitStatus.DISPONIBLE)
+                                .fechaGanado(java.time.LocalDateTime.now(java.time.ZoneId.of("America/Lima")))
+                                .fechaExpiracion(today.plusDays(3).atTime(23, 59, 59))
+                                .tipoEntrada(tipo)
+                                .cantidad(cantidad)
+                                .build();
                 pendingBenefitRepository.save(benefit);
-                System.out.println("✅ BENEFICIO DE CUMPLEAÑOS ASIGNADO A: " + user.getCorreo() + " (Tipo: " + tipo + ")");
+                System.out.println("✅ CUMPLEAÑOS → " + user.getCorreo() +
+                        " | Nivel: " + tierName +
+                        " | Tipo: " + tipo +
+                        " | Cantidad: " + cantidad);
             }
         }
     }

@@ -67,6 +67,7 @@ public class BirthdayBenefitIntegrationTest {
     private Cinema sedeNormal;
     private Cinema sedeVip;
     private LoyaltyTier tierAzul;
+    private LoyaltyTier tierDorado;
     private LoyaltyTier tierNegro;
     private Movie movie;
     private Auditorium sala2D;
@@ -84,8 +85,9 @@ public class BirthdayBenefitIntegrationTest {
         Mockito.when(valueOps.setIfAbsent(anyString(), any(), anyLong(), any())).thenReturn(true);
         Mockito.when(valueOps.get(anyString())).thenAnswer(inv -> inv.getArgument(0).toString().contains("lock") ? "ownerId" : null);
 
-        tierAzul = tierRepository.save(LoyaltyTier.builder().name("Azul").minPuntos(0).requiredYearlyVisits(0).description("Basic").build());
-        tierNegro = tierRepository.save(LoyaltyTier.builder().name("Negro").minPuntos(1500).requiredYearlyVisits(16).description("VIP").build());
+        tierAzul   = tierRepository.save(LoyaltyTier.builder().name("Azul").minPuntos(0).requiredYearlyVisits(0).description("Basic").build());
+        tierDorado = tierRepository.save(LoyaltyTier.builder().name("Dorado").minPuntos(500).requiredYearlyVisits(7).description("Gold").build());
+        tierNegro  = tierRepository.save(LoyaltyTier.builder().name("Negro").minPuntos(1500).requiredYearlyVisits(16).description("VIP").build());
 
         sedeNormal = cinemaRepository.save(Cinema.builder().nombre("Sede Normal").direccion("Av. Siempre Viva 123").ciudad("Lima").activa(true).vipCumpleanosHabilitado(false).build());
         sedeVip = cinemaRepository.save(Cinema.builder().nombre("Sede VIP").direccion("Av. VIP 456").ciudad("Lima").activa(true).vipCumpleanosHabilitado(true).build());
@@ -153,32 +155,82 @@ public class BirthdayBenefitIntegrationTest {
         assertEquals(2, pendingBenefitRepository.count());
     }
 
+    // ─── 6 combinaciones de la tabla de verdad ───────────────────────────────
+
     @Test
-    void test4_LogicaTipoEntradaNegroSedeVip() {
+    void testTV1_NegroSedeVip_EntradaVip_Cantidad1() {
         User user = createUser(LocalDate.now(), tierNegro, sedeVip);
         loyaltyService.assignBirthdayBenefitIfApplicable(user);
 
         PendingBenefit benefit = pendingBenefitRepository.findAll().get(0);
         assertEquals(TipoEntrada.VIP, benefit.getTipoEntrada());
+        assertEquals(1, benefit.getCantidad());
     }
 
     @Test
-    void test5_LogicaTipoEntradaNegroSedeNoVip() {
+    void testTV2_NegroSedeNoVip_2D_Cantidad2() {
         User user = createUser(LocalDate.now(), tierNegro, sedeNormal);
         loyaltyService.assignBirthdayBenefitIfApplicable(user);
 
         PendingBenefit benefit = pendingBenefitRepository.findAll().get(0);
         assertEquals(TipoEntrada.GENERAL_2D, benefit.getTipoEntrada());
+        assertEquals(2, benefit.getCantidad());
     }
 
     @Test
-    void test6_LogicaTipoEntradaAzulSedeVip() {
+    void testTV3_DoradoSedeVip_2D_Cantidad2() {
+        User user = createUser(LocalDate.now(), tierDorado, sedeVip);
+        loyaltyService.assignBirthdayBenefitIfApplicable(user);
+
+        PendingBenefit benefit = pendingBenefitRepository.findAll().get(0);
+        assertEquals(TipoEntrada.GENERAL_2D, benefit.getTipoEntrada());
+        assertEquals(2, benefit.getCantidad());
+    }
+
+    @Test
+    void testTV4_DoradoSedeNoVip_2D_Cantidad2() {
+        User user = createUser(LocalDate.now(), tierDorado, sedeNormal);
+        loyaltyService.assignBirthdayBenefitIfApplicable(user);
+
+        PendingBenefit benefit = pendingBenefitRepository.findAll().get(0);
+        assertEquals(TipoEntrada.GENERAL_2D, benefit.getTipoEntrada());
+        assertEquals(2, benefit.getCantidad());
+    }
+
+    @Test
+    void testTV5_AzulSedeVip_2D_Cantidad1() {
         User user = createUser(LocalDate.now(), tierAzul, sedeVip);
         loyaltyService.assignBirthdayBenefitIfApplicable(user);
 
         PendingBenefit benefit = pendingBenefitRepository.findAll().get(0);
         assertEquals(TipoEntrada.GENERAL_2D, benefit.getTipoEntrada());
+        assertEquals(1, benefit.getCantidad());
     }
+
+    @Test
+    void testTV6_AzulSedeNoVip_2D_Cantidad1() {
+        User user = createUser(LocalDate.now(), tierAzul, sedeNormal);
+        loyaltyService.assignBirthdayBenefitIfApplicable(user);
+
+        PendingBenefit benefit = pendingBenefitRepository.findAll().get(0);
+        assertEquals(TipoEntrada.GENERAL_2D, benefit.getTipoEntrada());
+        assertEquals(1, benefit.getCantidad());
+    }
+
+    @Test
+    void testTV_CantidadExpuestaEnGetTicketTypes_Dorado() {
+        User user = createUser(LocalDate.now(), tierDorado, sedeNormal);
+        loyaltyService.assignBirthdayBenefitIfApplicable(user);
+
+        List<Map<String, Object>> tickets = bookingService.getTicketTypes(showtime2D.getId(), user);
+        Map<String, Object> bdayTicket = tickets.stream()
+                .filter(t -> "BENEFICIO_CUMPLEANOS".equals(t.get("tipo")))
+                .findFirst().orElseThrow(() -> new AssertionError("Birthday benefit not in response"));
+
+        assertEquals(2, bdayTicket.get("cantidad"),
+                "Dorado debe exponer cantidad=2 en getTicketTypes");
+    }
+
 
     @Test
     @WithMockUser(roles = "ADMIN_SEDE")

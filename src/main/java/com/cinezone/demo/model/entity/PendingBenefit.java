@@ -31,6 +31,10 @@ public class PendingBenefit {
     @Builder.Default
     private LocalDateTime fechaGanado = LocalDateTime.now();
 
+    @Column(name = "cantidad", nullable = false)
+    @Builder.Default
+    private Integer cantidad = 1;
+
     @Column(name = "fecha_expiracion")
     private LocalDateTime fechaExpiracion;
 

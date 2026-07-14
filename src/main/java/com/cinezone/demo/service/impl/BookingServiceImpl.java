@@ -520,11 +520,14 @@ public class BookingServiceImpl implements BookingService {
                 }
 
                 if (validForThisRoom) {
+                    int cantidadBenefit = b.getCantidad() != null ? b.getCantidad() : 1;
                     java.util.Map<String, Object> benMap = new java.util.HashMap<>();
                     benMap.put("nombre", "Entrada Cumpleaños (" + b.getTipoEntrada().name() + ")");
                     benMap.put("tipo", "BENEFICIO_CUMPLEANOS");
                     benMap.put("precio", java.math.BigDecimal.ZERO);
                     benMap.put("pendingBenefitId", b.getId());
+                    benMap.put("cantidad", cantidadBenefit);
+                    benMap.put("descripcion", b.getDescripcion());
                     benMap.put("fechaExpiracion", b.getFechaExpiracion().toString());
                     result.add(benMap);
                 }

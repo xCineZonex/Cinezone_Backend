@@ -62,8 +62,10 @@ public class PublicController {
     }
 
     @GetMapping("/funciones/{showtimeId}/tipos-entrada")
-    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getTicketTypes(@PathVariable Long showtimeId) {
-        return ResponseEntity.ok(bookingService.getTicketTypes(showtimeId, null));
+    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getTicketTypes(
+            @PathVariable Long showtimeId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User currentUser) {
+        return ResponseEntity.ok(bookingService.getTicketTypes(showtimeId, currentUser));
     }
 
     @GetMapping("/beneficios")
