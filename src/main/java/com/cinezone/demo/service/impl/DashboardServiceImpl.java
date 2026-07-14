@@ -62,15 +62,14 @@ public class DashboardServiceImpl implements DashboardService {
             topPeliculas.add(Map.of("titulo", row[0], "recaudacion", row[1]));
         }
 
-        // Ocupación Sedes
-        List<Object[]> revenueByCinema = bookingRepository.findRevenueGroupedByCinemaFiltered(startOfDay, endOfDay);
+        // Ocupación Sedes (En vivo)
+        List<Object[]> rawOccupancy = cinemaRepository.findNationalOccupancy(java.time.LocalDateTime.now(java.time.ZoneId.of("America/Lima")));
         List<Map<String, Object>> ocupacionSedes = new ArrayList<>();
-        for (Object[] row : revenueByCinema) {
+        for (Object[] row : rawOccupancy) {
             String cinemaName = (String) row[0];
-            BigDecimal revenue = (BigDecimal) row[1];
-            // Estimamos boletos usando un promedio de 15 por ticket para calcular "ocupados" vs "capacidad"
-            int ticketsVendidos = revenue.intValue() / 15;
-            ocupacionSedes.add(Map.of("sede", cinemaName, "ocupados", ticketsVendidos, "capacidad", ticketsVendidos + 50));
+            int capacidadTotal = ((Number) row[1]).intValue();
+            int ocupados = ((Number) row[2]).intValue();
+            ocupacionSedes.add(Map.of("sede", cinemaName, "ocupados", ocupados, "capacidad", capacidadTotal));
         }
 
         long alertas = alertRepository.count();

@@ -14,7 +14,7 @@ public class AdminSedeController {
     private final AdminCatalogService adminCatalogService;
 
     @PatchMapping("/{id}/beneficio-vip-cumpleanos")
-    @PreAuthorize("hasRole('ADMIN_SEDE')")
+    @PreAuthorize("hasAnyRole('ADMIN_SEDE', 'SUPER_ADMIN')")
     public ResponseEntity<Void> toggleBeneficioVip(@PathVariable Long id, @RequestParam boolean habilitado) {
         adminCatalogService.toggleBeneficioVipCumpleanos(id, habilitado);
         return ResponseEntity.ok().build();

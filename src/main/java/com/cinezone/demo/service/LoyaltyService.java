@@ -34,7 +34,7 @@ public class LoyaltyService {
     public void assignBirthdayBenefitIfApplicable(User user) {
         if (!Boolean.TRUE.equals(user.getEsSocio()) || user.getFechaNacimiento() == null) return;
         
-        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("America/Lima"));
         int birthMonth = user.getFechaNacimiento().getMonthValue();
         int birthDay = user.getFechaNacimiento().getDayOfMonth();
         
@@ -60,7 +60,7 @@ public class LoyaltyService {
                     .tipoBeneficio("ENTRADA_GRATIS_CUMPLEAÑOS")
                     .descripcion(desc)
                     .estado(com.cinezone.demo.model.enums.BenefitStatus.DISPONIBLE)
-                    .fechaGanado(java.time.LocalDateTime.now())
+                    .fechaGanado(java.time.LocalDateTime.now(java.time.ZoneId.of("America/Lima")))
                     .fechaExpiracion(today.plusDays(3).atTime(23, 59, 59))
                     .tipoEntrada(tipo)
                     .build();
@@ -73,7 +73,7 @@ public class LoyaltyService {
     @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 1 * * ?", zone = "America/Lima")
     @org.springframework.transaction.annotation.Transactional
     public void processDailyBirthdayBenefits() {
-        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("America/Lima"));
         
         int searchMonth = today.getMonthValue();
         int searchDay = today.getDayOfMonth();
