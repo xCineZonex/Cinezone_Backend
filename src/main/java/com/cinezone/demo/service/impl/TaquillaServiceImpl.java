@@ -229,6 +229,13 @@ public class TaquillaServiceImpl implements TaquillaService {
     @Override
     @Transactional
     public com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO abrirCaja(User currentUser, com.cinezone.demo.dto.CashShiftDTOs.OpenShiftRequestDTO request) {
+        if (request.montoApertura() == null || request.montoApertura().compareTo(java.math.BigDecimal.ZERO) < 0) {
+            throw new BusinessRuleException("El monto de apertura no puede ser negativo o nulo.");
+        }
+        if (request.montoApertura().stripTrailingZeros().scale() > 2) {
+            throw new BusinessRuleException("El monto de apertura no puede tener más de 2 decimales.");
+        }
+
         if (cashShiftRepository.findTopByUserAndStatusOrderByOpenedAtDesc(currentUser, com.cinezone.demo.model.entity.CashShift.CashShiftStatus.ABIERTA).isPresent()) {
             throw new BusinessRuleException("Ya tienes una caja abierta.");
         }
