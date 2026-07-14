@@ -30,6 +30,7 @@ public class TaquillaServiceImpl implements TaquillaService {
     private final BookingRepository bookingRepository;
     private final TicketRepository ticketRepository;
     private final com.cinezone.demo.repository.CashShiftRepository cashShiftRepository;
+    private final com.cinezone.demo.repository.CashMovementRepository cashMovementRepository;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
     private final com.cinezone.demo.service.CancellationAuthService cancellationAuthService;
     private final com.cinezone.demo.repository.SystemAlertRepository systemAlertRepository;
@@ -217,13 +218,21 @@ public class TaquillaServiceImpl implements TaquillaService {
     public com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO getEstadoCaja(User currentUser) {
         Optional<com.cinezone.demo.model.entity.CashShift> opt = cashShiftRepository.findTopByUserAndStatusOrderByOpenedAtDesc(currentUser, com.cinezone.demo.model.entity.CashShift.CashShiftStatus.ABIERTA);
         if (opt.isEmpty()) {
-            return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(null, null, null, null, null, null, null, "CERRADA", null);
+            return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(null, null, null, null, null, null, null, null, null, null, null, "CERRADA", null);
         }
         var shift = opt.get();
-        BigDecimal sales = bookingRepository.sumTotalByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt());
-        if (sales == null) sales = BigDecimal.ZERO;
-        BigDecimal expected = shift.getOpeningBalance().add(sales);
-        return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(shift.getId(), shift.getOpenedAt(), null, shift.getOpeningBalance(), expected, null, null, "ABIERTA", shift.getModule());
+        BigDecimal salesEf = bookingRepository.sumTotalByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt());
+        if (salesEf == null) salesEf = BigDecimal.ZERO;
+        BigDecimal salesOt = bookingRepository.sumTotalOtrosByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt());
+        if (salesOt == null) salesOt = BigDecimal.ZERO;
+
+        BigDecimal ingresos = cashMovementRepository.sumIngresosByShift(shift.getId());
+        if (ingresos == null) ingresos = BigDecimal.ZERO;
+        BigDecimal egresos = cashMovementRepository.sumEgresosByShift(shift.getId());
+        if (egresos == null) egresos = BigDecimal.ZERO;
+
+        BigDecimal expected = shift.getOpeningBalance().add(salesEf).add(ingresos).subtract(egresos);
+        return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(shift.getId(), shift.getOpenedAt(), null, shift.getOpeningBalance(), salesEf, salesOt, ingresos, egresos, expected, null, null, "ABIERTA", shift.getModule());
     }
 
     @Override
@@ -246,7 +255,7 @@ public class TaquillaServiceImpl implements TaquillaService {
                 .module(request.module())
                 .build();
         shift = cashShiftRepository.save(shift);
-        return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(shift.getId(), java.time.LocalDateTime.now(), null, shift.getOpeningBalance(), null, null, null, "ABIERTA", shift.getModule());
+        return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(shift.getId(), java.time.LocalDateTime.now(), null, shift.getOpeningBalance(), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, shift.getOpeningBalance(), null, null, "ABIERTA", shift.getModule());
     }
 
     @Override
@@ -255,10 +264,17 @@ public class TaquillaServiceImpl implements TaquillaService {
         com.cinezone.demo.model.entity.CashShift shift = cashShiftRepository.findTopByUserAndStatusOrderByOpenedAtDesc(currentUser, com.cinezone.demo.model.entity.CashShift.CashShiftStatus.ABIERTA)
                 .orElseThrow(() -> new BusinessRuleException("No tienes ninguna caja abierta."));
         
-        BigDecimal sales = bookingRepository.sumTotalByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt());
-        if (sales == null) sales = BigDecimal.ZERO;
+        BigDecimal salesEf = bookingRepository.sumTotalByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt());
+        if (salesEf == null) salesEf = BigDecimal.ZERO;
+        BigDecimal salesOt = bookingRepository.sumTotalOtrosByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt());
+        if (salesOt == null) salesOt = BigDecimal.ZERO;
+
+        BigDecimal ingresos = cashMovementRepository.sumIngresosByShift(shift.getId());
+        if (ingresos == null) ingresos = BigDecimal.ZERO;
+        BigDecimal egresos = cashMovementRepository.sumEgresosByShift(shift.getId());
+        if (egresos == null) egresos = BigDecimal.ZERO;
         
-        BigDecimal expected = shift.getOpeningBalance().add(sales);
+        BigDecimal expected = shift.getOpeningBalance().add(salesEf).add(ingresos).subtract(egresos);
         BigDecimal difference = request.montoDeclarado().subtract(expected);
         
         shift.setExpectedClosingBalance(expected);
@@ -268,7 +284,37 @@ public class TaquillaServiceImpl implements TaquillaService {
         shift.setClosedAt(java.time.LocalDateTime.now());
         
         shift = cashShiftRepository.save(shift);
-        return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(shift.getId(), shift.getOpenedAt(), shift.getClosedAt(), shift.getOpeningBalance(), expected, request.montoDeclarado(), difference, "CERRADA", shift.getModule());
+        return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(shift.getId(), shift.getOpenedAt(), shift.getClosedAt(), shift.getOpeningBalance(), salesEf, salesOt, ingresos, egresos, expected, request.montoDeclarado(), difference, "CERRADA", shift.getModule());
+    }
+
+    @Override
+    @Transactional
+    public com.cinezone.demo.dto.CashShiftDTOs.CashMovementResponseDTO registerMovement(User currentUser, com.cinezone.demo.dto.CashShiftDTOs.RegisterMovementRequestDTO request) {
+        com.cinezone.demo.model.entity.CashShift shift = cashShiftRepository.findTopByUserAndStatusOrderByOpenedAtDesc(currentUser, com.cinezone.demo.model.entity.CashShift.CashShiftStatus.ABIERTA)
+                .orElseThrow(() -> new BusinessRuleException("No tienes ninguna caja abierta."));
+
+        if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException("El monto debe ser mayor a cero.");
+        }
+
+        com.cinezone.demo.model.entity.CashMovement.MovementType mType;
+        try {
+            mType = com.cinezone.demo.model.entity.CashMovement.MovementType.valueOf(request.type().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BusinessRuleException("Tipo de movimiento inválido. Use INGRESO o EGRESO.");
+        }
+
+        com.cinezone.demo.model.entity.CashMovement movement = com.cinezone.demo.model.entity.CashMovement.builder()
+                .cashShift(shift)
+                .type(mType)
+                .amount(request.amount())
+                .reason(request.reason())
+                .build();
+        
+        movement = cashMovementRepository.save(movement);
+        return new com.cinezone.demo.dto.CashShiftDTOs.CashMovementResponseDTO(
+                movement.getId(), movement.getType().name(), movement.getAmount(), movement.getReason(), java.time.LocalDateTime.now()
+        );
     }
 
     @Override

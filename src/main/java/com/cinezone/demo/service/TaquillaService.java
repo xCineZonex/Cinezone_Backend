@@ -14,6 +14,7 @@ public interface TaquillaService {
     com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO getEstadoCaja(com.cinezone.demo.model.entity.User currentUser);
     com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO abrirCaja(com.cinezone.demo.model.entity.User currentUser, com.cinezone.demo.dto.CashShiftDTOs.OpenShiftRequestDTO request);
     com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO cerrarCaja(com.cinezone.demo.model.entity.User currentUser, com.cinezone.demo.dto.CashShiftDTOs.CloseShiftRequestDTO request);
-    
     void anularVenta(com.cinezone.demo.model.entity.User currentUser, String bookingIdentifier, com.cinezone.demo.dto.AnularVentaRequestDTO request);
+    com.cinezone.demo.dto.CashShiftDTOs.CashMovementResponseDTO registerMovement(com.cinezone.demo.model.entity.User currentUser, com.cinezone.demo.dto.CashShiftDTOs.RegisterMovementRequestDTO request);
+
 }

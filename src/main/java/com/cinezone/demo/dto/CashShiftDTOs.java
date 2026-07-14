@@ -19,10 +19,28 @@ public class CashShiftDTOs {
             LocalDateTime abiertoEn,
             LocalDateTime cerradoEn,
             BigDecimal montoApertura,
+            BigDecimal ventasEfectivo,
+            BigDecimal ventasOtros,
+            BigDecimal ingresosAdicionales,
+            BigDecimal egresos,
             BigDecimal montoEsperado,
             BigDecimal montoDeclarado,
             BigDecimal descuadre,
             String estado,
             String modulo
+    ) {}
+
+    public record RegisterMovementRequestDTO(
+            String type,
+            BigDecimal amount,
+            String reason
+    ) {}
+
+    public record CashMovementResponseDTO(
+            Long id,
+            String type,
+            BigDecimal amount,
+            String reason,
+            LocalDateTime date
     ) {}
 }

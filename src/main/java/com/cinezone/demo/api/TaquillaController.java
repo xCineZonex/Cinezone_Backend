@@ -69,6 +69,11 @@ public class TaquillaController {
         return ResponseEntity.ok(service.cerrarCaja(currentUser, request));
     }
 
+    @PostMapping("/caja/movimiento")
+    public ResponseEntity<CashShiftDTOs.CashMovementResponseDTO> registerMovement(@AuthenticationPrincipal User currentUser, @RequestBody CashShiftDTOs.RegisterMovementRequestDTO request) {
+        return ResponseEntity.ok(service.registerMovement(currentUser, request));
+    }
+
     @PostMapping("/ventas/{bookingId}/anular")
     public ResponseEntity<Void> anularVenta(@AuthenticationPrincipal User currentUser, @PathVariable String bookingId, @RequestBody AnularVentaRequestDTO request) {
         service.anularVenta(currentUser, bookingId, request);

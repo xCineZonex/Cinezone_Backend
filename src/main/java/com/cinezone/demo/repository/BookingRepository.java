@@ -122,8 +122,11 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
            "GROUP BY EXTRACT(DOW FROM b.fecha_compra) ORDER BY dia_num", nativeQuery = true)
     List<Object[]> findRevenueByDayOfWeek(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end, @Param("sedeId") Long sedeId);
 
-    @Query("SELECT SUM(b.montoTotal) FROM Booking b WHERE b.employee.id = :employeeId AND b.estado IN ('VALIDA', 'USADA') AND b.fechaCompra >= :start")
+    @Query("SELECT SUM(b.montoTotal) FROM Booking b WHERE b.employee.id = :employeeId AND b.estado IN ('VALIDA', 'USADA') AND b.metodoPago = 'EFECTIVO' AND b.fechaCompra >= :start")
     BigDecimal sumTotalByEmployeeAndDate(@Param("employeeId") UUID employeeId, @Param("start") LocalDateTime start);
+
+    @Query("SELECT SUM(b.montoTotal) FROM Booking b WHERE b.employee.id = :employeeId AND b.estado IN ('VALIDA', 'USADA') AND b.metodoPago != 'EFECTIVO' AND b.fechaCompra >= :start")
+    BigDecimal sumTotalOtrosByEmployeeAndDate(@Param("employeeId") UUID employeeId, @Param("start") LocalDateTime start);
 
     List<Booking> findByEmployee_IdAndEstadoInOrderByFechaCompraDesc(UUID employeeId, java.util.Collection<BookingStatus> estados);
 }

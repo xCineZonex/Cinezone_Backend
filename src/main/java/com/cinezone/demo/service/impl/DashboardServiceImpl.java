@@ -28,6 +28,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final ShowtimeRepository showtimeRepository;
     private final com.cinezone.demo.service.CancellationAuthService cancellationAuthService;
     private final PendingBenefitRepository pendingBenefitRepository;
+    private final CashShiftRepository cashShiftRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -165,6 +166,17 @@ public class DashboardServiceImpl implements DashboardService {
             heatmapFunciones.add(Map.of("funcion", row[0], "ocupacion", ((Number) row[1]).intValue()));
         }
 
+        List<CashShift> closedShifts = cashShiftRepository.findByStatusAndUser_Sedes_Id(CashShift.CashShiftStatus.CERRADA, sedeId);
+        List<Map<String, Object>> revisionArqueos = new ArrayList<>();
+        for (CashShift shift : closedShifts) {
+            if (shift.getClosedAt() != null && shift.getClosedAt().toLocalDate().equals(LocalDate.now())) {
+                revisionArqueos.add(Map.of(
+                    "cajero", shift.getUser().getUsername(),
+                    "descuadre", shift.getDifference() != null ? shift.getDifference().toString() : "0.00"
+                ));
+            }
+        }
+
         return Map.ofEntries(
             Map.entry("ingresosHoy", ingresosHoy.toString()),
             Map.entry("ocupacionPromedioDia", ocupacionPromedioDia),
@@ -174,7 +186,7 @@ public class DashboardServiceImpl implements DashboardService {
             Map.entry("heatmapFunciones", heatmapFunciones),
             Map.entry("stockCritico", stockCritico),
             Map.entry("ultimosMovimientos", List.of()),
-            Map.entry("revisionArqueos", List.of())
+            Map.entry("revisionArqueos", revisionArqueos)
         );
     }
 

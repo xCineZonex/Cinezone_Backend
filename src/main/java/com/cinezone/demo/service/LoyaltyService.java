@@ -21,6 +21,30 @@ public class LoyaltyService {
     private final TicketBasePriceRepository ticketBasePriceRepository;
     private final com.cinezone.demo.repository.PendingBenefitRepository pendingBenefitRepository;
 
+    @jakarta.annotation.PostConstruct
+    public void syncBenefitsToBasePrices() {
+        List<com.cinezone.demo.model.entity.TicketBenefit> benefits = ticketBenefitRepository.findAll();
+        for (com.cinezone.demo.model.entity.TicketBenefit b : benefits) {
+            if (b.getTicketBasePriceId() == null) {
+                TicketBasePrice tbp = new TicketBasePrice();
+                String tierName = b.getRequiredTier() != null && b.getRequiredTier().getId() != null ? 
+                    tierRepository.findById(b.getRequiredTier().getId()).map(LoyaltyTier::getName).orElse("") : "";
+                    
+                String suffix = (b.getFormato() != null && !b.getFormato().equals(com.cinezone.demo.util.AppConstants.FORMATO_TODOS)) ? " - " + b.getFormato() : "";
+                tbp.setName(b.getName() + (tierName.isEmpty() ? "" : " (" + tierName + ")") + suffix);
+                tbp.setTicketType(com.cinezone.demo.model.enums.TicketType.BENEFICIO);
+                tbp.setFormato(b.getFormato() != null ? b.getFormato() : com.cinezone.demo.util.AppConstants.FORMATO_TODOS);
+                tbp.setBasePrice(b.getPrice());
+                tbp.setIsActive(true);
+                tbp.setBeneficio(b);
+                tbp = ticketBasePriceRepository.save(tbp);
+                
+                b.setTicketBasePriceId(tbp.getId());
+                ticketBenefitRepository.save(b);
+            }
+        }
+    }
+
     private com.cinezone.demo.model.enums.TipoEntrada determinarTipoEntrada(User user) {
         if (user.getTier() != null && "Negro".equalsIgnoreCase(user.getTier().getName())) {
             if (user.getSedes() != null && user.getSedes().stream().anyMatch(s -> Boolean.TRUE.equals(s.getVipCumpleanosHabilitado()))) {
