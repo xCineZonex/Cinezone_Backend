@@ -7,7 +7,8 @@ public record CinemaDTO(
         String ciudad,
         String imagen,
         String posterUrl,
-        Boolean activa
+        Boolean activa,
+        Boolean vipCumpleanosHabilitado
 ) {
     public static CinemaDTO fromEntity(com.cinezone.demo.model.entity.Cinema c) {
         if (c == null) return null;
@@ -18,7 +19,8 @@ public record CinemaDTO(
                 c.getCiudad(),
                 c.getImagen(),
                 c.getImagen(),
-                c.getActiva()
+                c.getActiva(),
+                c.getVipCumpleanosHabilitado()
         );
     }
 }
