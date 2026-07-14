@@ -38,7 +38,7 @@ public class LoyaltyTier {
 
     // MAGIA DE HIBERNATE 6: Mapeo directo de JSONB a un Map de Java
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "beneficios", nullable = false, columnDefinition = "jsonb")
+    @Column(name = "beneficios", nullable = false)
     private Map<String, Object> benefits;
 
     @Column(name = "max_entradas_mensuales")

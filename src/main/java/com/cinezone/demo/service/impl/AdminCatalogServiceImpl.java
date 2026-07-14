@@ -66,7 +66,10 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 throw new com.cinezone.demo.exception.BusinessRuleException("El tipo de sala VIP solo permite asientos VIP.");
             }
         }
-        // IMAX permite todos (ESTANDAR, DISCAPACIDAD, VIP)
+        // IMAX permite ESTANDAR y DISCAPACIDAD, pero NO VIP
+        if (ts.equals("IMAX") && tipoAsiento == SeatType.VIP) {
+            throw new com.cinezone.demo.exception.BusinessRuleException("El tipo de sala IMAX no permite asientos VIP.");
+        }
     }
 
     private void validarFormatoParaSala(String tipoSala, com.cinezone.demo.model.enums.ProjectionFormat formato) {
@@ -191,6 +194,16 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
         }
 
         return com.cinezone.demo.dto.CinemaDTO.fromEntity(cinema);
+    }
+
+    @Override
+    @Transactional
+    public void toggleBeneficioVipCumpleanos(Long sedeId, boolean habilitado) {
+        Cinema cinema = cinemaRepository.findById(sedeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada"));
+        validateOwnershipGuard(cinema.getId());
+        cinema.setVipCumpleanosHabilitado(habilitado);
+        cinemaRepository.save(cinema);
     }
 
     @Override

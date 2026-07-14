@@ -45,6 +45,10 @@ public class BookingServiceImpl implements BookingService {
     private final com.cinezone.demo.repository.BenefitMonthlyUsageRepository benefitMonthlyUsageRepository;
     private final com.cinezone.demo.service.InventoryService inventoryService;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    private final com.cinezone.demo.repository.PendingBenefitRepository pendingBenefitRepository;
+
+    @org.springframework.beans.factory.annotation.Value("${cinezone.seat.lock.ttl.seconds:300}")
+    private long seatLockTtlSeconds;
 
     // Métodos delegados para cálculo dinámico
 
@@ -133,7 +137,19 @@ public class BookingServiceImpl implements BookingService {
                     throw new BusinessRuleException("El tiempo de reserva expiró o el asiento no te pertenece.");
                 }
 
-                expectedTotal = expectedTotal.add(priceCalculationService.calculateTicketPrice(showtime, seatReq.tipoEntrada()));
+                if (seatReq.pendingBenefitId() != null) {
+                    com.cinezone.demo.model.entity.PendingBenefit pendingBen = pendingBenefitRepository.findById(seatReq.pendingBenefitId()).orElse(null);
+                    if (pendingBen != null && pendingBen.getEstado() == com.cinezone.demo.model.enums.BenefitStatus.DISPONIBLE) {
+                        String salaTipo = showtime.getAuditorium().getTipo();
+                        if (pendingBen.getTipoEntrada() == com.cinezone.demo.model.enums.TipoEntrada.GENERAL_2D && "VIP".equals(salaTipo)) {
+                            throw new BusinessRuleException("El beneficio no es válido para salas VIP.");
+                        }
+                    } else {
+                        throw new BusinessRuleException("El beneficio de cumpleaños ya no está disponible.");
+                    }
+                } else {
+                    expectedTotal = expectedTotal.add(priceCalculationService.calculateTicketPrice(showtime, seatReq.tipoEntrada()));
+                }
             }
         }
 
@@ -185,6 +201,16 @@ public class BookingServiceImpl implements BookingService {
                     Long benId = entry.getKey();
                     Integer requestedCount = entry.getValue();
                     com.cinezone.demo.model.entity.TicketBenefit ben = ticketBenefitRepository.findById(benId).orElse(null);
+                    if (ben != null) {
+                        int puntosReq = ben.getPointsRequired() != null ? ben.getPointsRequired() : 0;
+                        int ptsGastados = puntosReq * requestedCount;
+                        if (ptsGastados > 0) {
+                            int puntosUser = buyerUser.getPuntos() != null ? buyerUser.getPuntos() : 0;
+                            if (puntosUser < ptsGastados) {
+                                throw new BusinessRuleException("Puntos insuficientes para canjear beneficio. Puntos actuales: " + puntosUser);
+                            }
+                        }
+                    }
                     if (ben != null && ben.getMonthlyLimit() != null && ben.getMonthlyLimit() > 0) {
                         com.cinezone.demo.model.entity.BenefitMonthlyUsage usage;
                         final com.cinezone.demo.model.entity.User finalBuyerUser = buyerUser;
@@ -234,15 +260,22 @@ public class BookingServiceImpl implements BookingService {
         if (hasTickets) {
             for (var seatReq : request.asientos()) {
                 Seat seat = seatRepository.findById(seatReq.asientoId()).orElseThrow();
+                BigDecimal precioAplicado = seatReq.pendingBenefitId() != null ? java.math.BigDecimal.ZERO : priceCalculationService.calculateTicketPrice(showtime, seatReq.tipoEntrada());
                 Ticket ticket = Ticket.builder()
                         .booking(booking)
                         .seat(seat)
                         .tipoEntrada(seatReq.tipoEntrada())
-                        .precioPagado(priceCalculationService.calculateTicketPrice(showtime, seatReq.tipoEntrada()))
+                        .precioPagado(precioAplicado)
                         .beneficioId(seatReq.beneficioId())
                         .build();
 
-                // Seguridad: Validar formato del beneficio
+                if (seatReq.pendingBenefitId() != null) {
+                    com.cinezone.demo.model.entity.PendingBenefit pendingBen = pendingBenefitRepository.findById(seatReq.pendingBenefitId()).orElseThrow();
+                    pendingBen.setEstado(com.cinezone.demo.model.enums.BenefitStatus.USADO);
+                    pendingBenefitRepository.save(pendingBen);
+                }
+
+                // Seguridad: Validar formato del beneficio de fidelidad (TicketBenefit)
                 if (seatReq.beneficioId() != null) {
                     com.cinezone.demo.model.entity.TicketBenefit ben = ticketBenefitRepository.findById(seatReq.beneficioId()).orElse(null);
                     if (ben != null && ben.getFormato() != null && !ben.getFormato().equals(com.cinezone.demo.util.AppConstants.FORMATO_TODOS)) {
@@ -380,14 +413,14 @@ public class BookingServiceImpl implements BookingService {
         Boolean success = redisTemplate.opsForValue().setIfAbsent(
                 redisKey, 
                 currentUser.getId().toString(), 
-                java.time.Duration.ofMinutes(5)
+                java.time.Duration.ofSeconds(seatLockTtlSeconds)
         );
         
         if (Boolean.FALSE.equals(success)) {
             // Verificar si el asiento ya está bloqueado por el mismo usuario (renovar expiración)
             String lockOwner = (String) redisTemplate.opsForValue().get(redisKey);
             if (lockOwner != null && lockOwner.equals(currentUser.getId().toString())) {
-                redisTemplate.expire(redisKey, java.time.Duration.ofMinutes(5));
+                redisTemplate.expire(redisKey, java.time.Duration.ofSeconds(seatLockTtlSeconds));
                 return;
             }
             throw new BusinessRuleException("El asiento seleccionado ya está siendo reservado por otra persona.");
@@ -395,7 +428,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public java.util.List<java.util.Map<String, Object>> getTicketTypes(Long showtimeId) {
+    public java.util.List<java.util.Map<String, Object>> getTicketTypes(Long showtimeId, User currentUser) {
         Showtime showtime = showtimeRepository.findById(showtimeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Función no encontrada"));
 
@@ -458,10 +491,8 @@ public class BookingServiceImpl implements BookingService {
             if (salaTipo.equals("VIP")) {
                 // Sala VIP solo admite tickets VIP
                 if (!isVipTicket) continue;
-            } else if (salaTipo.equals("IMAX")) {
-                // Sala IMAX admite tanto VIP como Estándar
             } else {
-                // Otras salas (REGULAR, 3D, 4DX, etc.) NO admiten tickets VIP
+                // Salas REGULAR, 3D, IMAX, 4DX NO admiten tickets VIP
                 if (isVipTicket) continue;
             }
 
@@ -472,6 +503,32 @@ public class BookingServiceImpl implements BookingService {
                 "tipo", base.getTicketType().name(),
                 "precio", finalPrice
             ));
+        }
+
+        if (currentUser != null && currentUser.getRol() == com.cinezone.demo.model.enums.Role.CLIENT) {
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            List<com.cinezone.demo.model.entity.PendingBenefit> benefits = pendingBenefitRepository.findByUserAndTipoBeneficioAndEstadoAndFechaExpiracionAfter(
+                currentUser, "ENTRADA_GRATIS_CUMPLEAÑOS", com.cinezone.demo.model.enums.BenefitStatus.DISPONIBLE, now);
+            
+            if (!benefits.isEmpty()) {
+                com.cinezone.demo.model.entity.PendingBenefit b = benefits.get(0);
+                boolean validForThisRoom = false;
+                if (b.getTipoEntrada() == com.cinezone.demo.model.enums.TipoEntrada.VIP && salaTipo.equals("VIP")) {
+                    validForThisRoom = true;
+                } else if (b.getTipoEntrada() == com.cinezone.demo.model.enums.TipoEntrada.GENERAL_2D && !salaTipo.equals("VIP")) {
+                    validForThisRoom = true;
+                }
+
+                if (validForThisRoom) {
+                    java.util.Map<String, Object> benMap = new java.util.HashMap<>();
+                    benMap.put("nombre", "Entrada Cumpleaños (" + b.getTipoEntrada().name() + ")");
+                    benMap.put("tipo", "BENEFICIO_CUMPLEANOS");
+                    benMap.put("precio", java.math.BigDecimal.ZERO);
+                    benMap.put("pendingBenefitId", b.getId());
+                    benMap.put("fechaExpiracion", b.getFechaExpiracion().toString());
+                    result.add(benMap);
+                }
+            }
         }
 
         return result;
@@ -492,7 +549,10 @@ public class BookingServiceImpl implements BookingService {
         booking.setEstado(BookingStatus.VALIDA);
         bookingRepository.save(booking);
 
-        User currentUser = booking.getUser();
+        User currentUser = null;
+        if (booking.getUser() != null) {
+            currentUser = userRepository.findByIdForUpdate(booking.getUser().getId()).orElse(booking.getUser());
+        }
         if (currentUser == null) {
             return; // Es un cliente temporal, no acumula puntos ni niveles
         }
@@ -539,7 +599,8 @@ public class BookingServiceImpl implements BookingService {
                 currentUser.setLastBenefitMonth(today.getMonthValue());
             }
 
-            // Increment benefit usage
+            // Increment benefit usage and deduct points
+            int puntosGastados = 0;
             for (Ticket t : tickets) {
                 if (t.getBeneficioId() != null) {
                     java.util.Map<String, Integer> usageMap = currentUser.getMonthlyBenefitUsage();
@@ -547,7 +608,27 @@ public class BookingServiceImpl implements BookingService {
                     String benId = t.getBeneficioId().toString();
                     usageMap.put(benId, usageMap.getOrDefault(benId, 0) + 1);
                     currentUser.setMonthlyBenefitUsage(usageMap);
+                    
+                    com.cinezone.demo.model.entity.TicketBenefit ben = ticketBenefitRepository.findById(t.getBeneficioId()).orElse(null);
+                    if (ben != null && ben.getPointsRequired() != null && ben.getPointsRequired() > 0) {
+                        puntosGastados += ben.getPointsRequired();
+                    }
                 }
+            }
+            if (puntosGastados > 0) {
+                int puntosActuales = currentUser.getPuntos() != null ? currentUser.getPuntos() : 0;
+                // Si justo antes del descuento se detecta que los puntos revalidados son menores:
+                if (puntosActuales < puntosGastados) {
+                    throw new BusinessRuleException("Saldo de puntos insuficiente al confirmar la compra (doble gasto detectado). Puntos actuales: " + puntosActuales);
+                }
+                currentUser.setPuntos(puntosActuales - puntosGastados);
+                pointHistoryRepository.save(PointHistory.builder()
+                        .user(currentUser)
+                        .puntos(puntosGastados)
+                        .tipo(PointType.CANJEADO)
+                        .descripcion("Canje de beneficios en reserva #" + booking.getCodigoUnico().toString().substring(0,8))
+                        .booking(booking)
+                        .build());
             }
         }
         
@@ -691,6 +772,41 @@ public class BookingServiceImpl implements BookingService {
                 }
             }
         }
+
+        // Restar puntos al usuario si la boleta pertenece a un CLIENT
+        if (booking.getUser() != null
+                && booking.getUser().getRol() == com.cinezone.demo.model.enums.Role.CLIENT) {
+
+            List<PointHistory> puntosOtorgados = pointHistoryRepository.findByBooking_Id(bookingId);
+            if (puntosOtorgados != null && !puntosOtorgados.isEmpty()) {
+                // Sumar todos los puntos ganados por esta boleta
+                int puntosADescontar = puntosOtorgados.stream()
+                        .filter(ph -> ph.getTipo() == PointType.GANADO)
+                        .mapToInt(ph -> ph.getPuntos() != null ? ph.getPuntos() : 0)
+                        .sum();
+
+                if (puntosADescontar > 0) {
+                    // Recargar usuario con lock pesimista para evitar stale data
+                    User freshUser = userRepository.findByIdForUpdate(booking.getUser().getId())
+                            .orElseThrow(() -> new com.cinezone.demo.exception.ResourceNotFoundException("Usuario no encontrado para actualizar puntos: " + booking.getUser().getId()));
+                    int puntosActuales = freshUser.getPuntos() != null ? freshUser.getPuntos() : 0;
+                    int puntosResultantes = puntosActuales - puntosADescontar;
+                    freshUser.setPuntos(puntosResultantes);
+                    userRepository.save(freshUser);
+
+                    // Registrar historial de deducción de puntos por cancelación
+                    PointHistory descuento = PointHistory.builder()
+                            .user(freshUser)
+                            .puntos(-puntosADescontar)
+                            .tipo(PointType.CANJEADO)
+                            .descripcion("Descuento por anulación de boleta " + booking.getCodigoUnico() + " | " + motivo)
+                            .booking(booking)
+                            .build();
+                    pointHistoryRepository.save(descuento);
+                }
+            }
+        }
+
     }
 
     @org.springframework.scheduling.annotation.Scheduled(fixedRate = 60000)

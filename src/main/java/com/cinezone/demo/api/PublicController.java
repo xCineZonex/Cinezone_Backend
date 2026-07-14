@@ -61,9 +61,9 @@ public class PublicController {
         return ResponseEntity.ok(dtos);
     }
 
-    @GetMapping("/funciones/{funcionId}/tipos-entrada")
-    public ResponseEntity<List<java.util.Map<String, Object>>> getTiposEntrada(@PathVariable Long funcionId) {
-        return ResponseEntity.ok(bookingService.getTicketTypes(funcionId));
+    @GetMapping("/funciones/{showtimeId}/ticket-types")
+    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getTicketTypes(@PathVariable Long showtimeId) {
+        return ResponseEntity.ok(bookingService.getTicketTypes(showtimeId, null));
     }
 
     @GetMapping("/beneficios")

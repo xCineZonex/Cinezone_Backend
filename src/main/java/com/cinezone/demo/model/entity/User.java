@@ -104,7 +104,7 @@ public class User implements UserDetails {
     private LoyaltyTier tier;
 
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
-    @Column(name = "uso_beneficios_mensual", columnDefinition = "jsonb")
+    @Column(name = "uso_beneficios_mensual")
     @Builder.Default
     private java.util.Map<String, Integer> monthlyBenefitUsage = new java.util.HashMap<>();
 

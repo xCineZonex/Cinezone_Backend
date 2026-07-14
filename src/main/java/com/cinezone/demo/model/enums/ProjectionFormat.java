@@ -3,5 +3,6 @@ public enum ProjectionFormat {
     FORMAT_2D,
     FORMAT_3D,
     IMAX,
-    FORMAT_4DX
+    FORMAT_4DX,
+    VIP
 }

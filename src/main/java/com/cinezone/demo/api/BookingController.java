@@ -41,8 +41,8 @@ public class BookingController {
     }
 
     @GetMapping("/showtime/{showtimeId}/ticket-types")
-    public ResponseEntity<List<Map<String, Object>>> getTicketTypes(@PathVariable Long showtimeId) {
-        return ResponseEntity.ok(service.getTicketTypes(showtimeId));
+    public ResponseEntity<List<Map<String, Object>>> getTicketTypes(@PathVariable Long showtimeId, @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(service.getTicketTypes(showtimeId, currentUser));
     }
 
     @GetMapping("/{bookingId}/recibo")

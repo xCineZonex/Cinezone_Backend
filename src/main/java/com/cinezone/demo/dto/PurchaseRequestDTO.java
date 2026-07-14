@@ -25,7 +25,8 @@ public record PurchaseRequestDTO(
             Long asientoId,
             TicketType tipoEntrada, // NORMAL, TERCERA_EDAD, etc.
             BigDecimal precioCobrado,
-            Long beneficioId
+            Long beneficioId,
+            Long pendingBenefitId
     ) {}
 
     public record SnackPurchaseDTO(

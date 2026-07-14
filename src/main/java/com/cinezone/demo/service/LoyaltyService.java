@@ -19,6 +19,76 @@ public class LoyaltyService {
     private final UserRepository userRepository;
     private final com.cinezone.demo.repository.TicketBenefitRepository ticketBenefitRepository;
     private final TicketBasePriceRepository ticketBasePriceRepository;
+    private final com.cinezone.demo.repository.PendingBenefitRepository pendingBenefitRepository;
+
+    private com.cinezone.demo.model.enums.TipoEntrada determinarTipoEntrada(User user) {
+        if (user.getTier() != null && "Negro".equalsIgnoreCase(user.getTier().getName())) {
+            if (user.getSedes() != null && user.getSedes().stream().anyMatch(s -> Boolean.TRUE.equals(s.getVipCumpleanosHabilitado()))) {
+                return com.cinezone.demo.model.enums.TipoEntrada.VIP;
+            }
+        }
+        return com.cinezone.demo.model.enums.TipoEntrada.GENERAL_2D;
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void assignBirthdayBenefitIfApplicable(User user) {
+        if (!Boolean.TRUE.equals(user.getEsSocio()) || user.getFechaNacimiento() == null) return;
+        
+        java.time.LocalDate today = java.time.LocalDate.now();
+        int birthMonth = user.getFechaNacimiento().getMonthValue();
+        int birthDay = user.getFechaNacimiento().getDayOfMonth();
+        
+        // Regla para nacidos el 29 de febrero en años no bisiestos
+        if (birthMonth == 2 && birthDay == 29 && !today.isLeapYear()) {
+            birthDay = 28;
+        }
+
+        if (birthMonth == today.getMonthValue() && birthDay == today.getDayOfMonth()) {
+            
+            java.time.LocalDateTime startOfYear = java.time.LocalDate.of(today.getYear(), 1, 1).atStartOfDay();
+            boolean alreadyReceived = pendingBenefitRepository.existsByUserAndTipoBeneficioAndFechaGanadoAfter(
+                user, "ENTRADA_GRATIS_CUMPLEAÑOS", startOfYear);
+                
+            if (!alreadyReceived) {
+                com.cinezone.demo.model.enums.TipoEntrada tipo = determinarTipoEntrada(user);
+                String desc = tipo == com.cinezone.demo.model.enums.TipoEntrada.VIP ? 
+                    "¡Feliz Cumpleaños! Tienes una entrada VIP gratis." : 
+                    "¡Feliz Cumpleaños! Tienes una entrada 2D gratis.";
+                    
+                com.cinezone.demo.model.entity.PendingBenefit benefit = com.cinezone.demo.model.entity.PendingBenefit.builder()
+                    .user(user)
+                    .tipoBeneficio("ENTRADA_GRATIS_CUMPLEAÑOS")
+                    .descripcion(desc)
+                    .estado(com.cinezone.demo.model.enums.BenefitStatus.DISPONIBLE)
+                    .fechaGanado(java.time.LocalDateTime.now())
+                    .fechaExpiracion(today.plusDays(3).atTime(23, 59, 59))
+                    .tipoEntrada(tipo)
+                    .build();
+                pendingBenefitRepository.save(benefit);
+                System.out.println("✅ BENEFICIO DE CUMPLEAÑOS ASIGNADO A: " + user.getCorreo() + " (Tipo: " + tipo + ")");
+            }
+        }
+    }
+
+    @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 1 * * ?", zone = "America/Lima")
+    @org.springframework.transaction.annotation.Transactional
+    public void processDailyBirthdayBenefits() {
+        java.time.LocalDate today = java.time.LocalDate.now();
+        
+        int searchMonth = today.getMonthValue();
+        int searchDay = today.getDayOfMonth();
+        
+        // Si hoy es 28 de febrero y no es bisiesto, buscar también a los del 29
+        java.util.List<User> birthdayUsers = new java.util.ArrayList<>(userRepository.findUsersByBirthday(searchMonth, searchDay));
+        if (searchMonth == 2 && searchDay == 28 && !today.isLeapYear()) {
+            birthdayUsers.addAll(userRepository.findUsersByBirthday(2, 29));
+        }
+        
+        System.out.println("🎂 Procesando beneficios de cumpleaños para " + birthdayUsers.size() + " usuarios...");
+        for (User user : birthdayUsers) {
+            assignBirthdayBenefitIfApplicable(user);
+        }
+    }
 
     public void evaluateTierUpgradeById(java.util.UUID userId) {
         userRepository.findById(userId).ifPresent(this::evaluateTierUpgrade);

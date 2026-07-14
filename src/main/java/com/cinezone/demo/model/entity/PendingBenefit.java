@@ -34,6 +34,10 @@ public class PendingBenefit {
     @Column(name = "fecha_expiracion")
     private LocalDateTime fechaExpiracion;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_entrada", length = 50)
+    private com.cinezone.demo.model.enums.TipoEntrada tipoEntrada;
+
     public Long getId() {
         return this.id;
     }

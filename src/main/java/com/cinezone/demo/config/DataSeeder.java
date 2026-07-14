@@ -5,13 +5,16 @@ import com.cinezone.demo.repository.LoyaltyTierRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.Map;
 
 @Configuration
 @RequiredArgsConstructor
+@Profile("!test")
 @Order(1) // Ejecutar antes que AdminSeeder si es necesario
 public class DataSeeder implements CommandLineRunner {
 

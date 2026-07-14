@@ -17,6 +17,7 @@ public interface AdminCatalogService {
     // Métodos de Actualización
     com.cinezone.demo.dto.MovieDTO updateMovie(Long id, MovieUpdateDTO request);
     com.cinezone.demo.dto.CinemaDTO updateCinema(Long id, CinemaUpdateDTO request);
+    void toggleBeneficioVipCumpleanos(Long sedeId, boolean habilitado);
     com.cinezone.demo.dto.AuditoriumDTO updateAuditorium(Long id, AuditoriumUpdateDTO request);
     com.cinezone.demo.dto.ShowtimeDTO updateShowtime(Long id, ShowtimeUpdateDTO request);
     void deleteShowtime(Long id);

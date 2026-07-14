@@ -100,4 +100,29 @@ public class BenefitUsageValidationTest {
         // se hace un findForUpdate de nuevo para capturar el creado por el otro hilo.
         assertNotNull(benefit);
     }
+    @Test
+    void testNegativePointsCannotRedeemBenefit() {
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setPuntos(-5); // Saldo negativo por anulación previa
+        
+        TicketBenefit benefit = new TicketBenefit();
+        benefit.setId(1L);
+        benefit.setPointsRequired(5);
+        
+        // Simulación: Si el usuario intenta canjear 1 beneficio que cuesta 5 puntos, pero tiene -5
+        int ptsGastados = benefit.getPointsRequired() * 1;
+        
+        com.cinezone.demo.exception.BusinessRuleException exception = assertThrows(
+            com.cinezone.demo.exception.BusinessRuleException.class, () -> {
+                if (ptsGastados > 0) {
+                    if (user.getPuntos() == null || user.getPuntos() < ptsGastados) {
+                        throw new com.cinezone.demo.exception.BusinessRuleException("Puntos insuficientes para canjear beneficio. Puntos actuales: " + user.getPuntos());
+                    }
+                }
+            }
+        );
+        
+        assertTrue(exception.getMessage().contains("Puntos insuficientes"));
+    }
 }

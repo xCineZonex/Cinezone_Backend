@@ -4,5 +4,6 @@ public enum TicketType {
     TERCERA_EDAD,
     DISCAPACIDAD,
     NINO,
-    BENEFICIO
-}
+    BENEFICIO,
+    VIP
+}

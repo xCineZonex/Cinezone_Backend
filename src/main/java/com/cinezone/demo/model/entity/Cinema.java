@@ -26,6 +26,10 @@ public class Cinema {
     @Builder.Default
     private Boolean activa = true;
 
+    @Column(name = "vip_cumpleanos_habilitado", nullable = false)
+    @Builder.Default
+    private Boolean vipCumpleanosHabilitado = false;
+
     public Long getId() {
         return this.id;
     }

@@ -29,6 +29,7 @@ public class AuthServiceImpl implements AuthService { // Aquí aplicamos tu patr
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final com.cinezone.demo.service.EmailService emailService;
+    private final com.cinezone.demo.service.LoyaltyService loyaltyService;
 
     @Override
     @Transactional
@@ -136,6 +137,12 @@ public class AuthServiceImpl implements AuthService { // Aquí aplicamos tu patr
         
         user.setSessionToken(java.util.UUID.randomUUID().toString());
         userRepository.save(user);
+
+        try {
+            loyaltyService.assignBirthdayBenefitIfApplicable(user);
+        } catch (Exception e) {
+            System.err.println("Error assigning birthday benefit: " + e.getMessage());
+        }
 
         String token = jwtService.generateToken(user);
         return new AuthResponseDTO(token, "Login exitoso", user.getRol().name());

@@ -120,7 +120,7 @@ public class TaquillaServiceImpl implements TaquillaService {
         }
 
         BigDecimal differenceTotal = BigDecimal.ZERO;
-        List<java.util.Map<String, Object>> prices = bookingService.getTicketTypes(booking.getShowtime().getId());
+        List<java.util.Map<String, Object>> prices = bookingService.getTicketTypes(booking.getShowtime().getId(), null);
         BigDecimal normalPrice = BigDecimal.ZERO;
         for (java.util.Map<String, Object> p : prices) {
             if ("NORMAL".equals(p.get("tipo"))) {
@@ -169,7 +169,7 @@ public class TaquillaServiceImpl implements TaquillaService {
         boolean hasDiscount = false;
         BigDecimal differenceTotal = BigDecimal.ZERO;
 
-        List<java.util.Map<String, Object>> prices = bookingService.getTicketTypes(booking.getShowtime().getId());
+        List<java.util.Map<String, Object>> prices = bookingService.getTicketTypes(booking.getShowtime().getId(), null);
         BigDecimal normalPrice = BigDecimal.ZERO;
         for (java.util.Map<String, Object> p : prices) {
             if ("NORMAL".equals(p.get("tipo"))) {

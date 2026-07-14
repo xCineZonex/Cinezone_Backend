@@ -27,6 +27,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final BookingSnackRepository bookingSnackRepository;
     private final ShowtimeRepository showtimeRepository;
     private final com.cinezone.demo.service.CancellationAuthService cancellationAuthService;
+    private final PendingBenefitRepository pendingBenefitRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -41,8 +42,15 @@ public class DashboardServiceImpl implements DashboardService {
         BigDecimal ingresosDulceria = bookingSnackRepository.calculateTotalSnackRevenue(null, startOfDay, endOfDay);
         if (ingresosDulceria == null) ingresosDulceria = BigDecimal.ZERO;
         
-        double margenDulceria = ingresosTotales.compareTo(BigDecimal.ZERO) > 0 ? 
-            (ingresosDulceria.doubleValue() * 100 / ingresosTotales.doubleValue()) : 0.0;
+        double margenDulceria;
+        if (ingresosDulceria.compareTo(BigDecimal.ZERO) > 0) {
+            // Si hay ingresos de dulcería: % sobre el total; si el total es 0 (solo dulcería), retorna 100%
+            margenDulceria = ingresosTotales.compareTo(BigDecimal.ZERO) > 0
+                    ? (ingresosDulceria.doubleValue() * 100 / ingresosTotales.doubleValue())
+                    : 100.0;
+        } else {
+            margenDulceria = 0.0;
+        }
 
         long usuariosActivos = userRepository.count();
 
@@ -105,7 +113,7 @@ public class DashboardServiceImpl implements DashboardService {
             Map.entry("termometroQuejas", termometroQuejas),
             Map.entry("distribucionClientes", distribucionClientes),
             Map.entry("totalPuntosEmitidos", totalPuntos.intValue()),
-            Map.entry("beneficiosPendientes", 0)
+            Map.entry("beneficiosPendientes", (int) pendingBenefitRepository.countByEstadoAndFechaExpiracionAfter(com.cinezone.demo.model.enums.BenefitStatus.DISPONIBLE, LocalDateTime.now()))
         );
     }
 
