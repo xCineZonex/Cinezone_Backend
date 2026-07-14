@@ -23,6 +23,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@org.springframework.transaction.annotation.Transactional
 @ActiveProfiles("test")
 public class SeatLockingIntegrationTest {
 
@@ -84,7 +85,7 @@ public class SeatLockingIntegrationTest {
         user2 = userRepository.save(User.builder().dni("22222222").nombre("Test").apellido("User2").correo("user2@test.com").contrasena("pass").rol(com.cinezone.demo.model.enums.Role.CLIENT).build());
 
         Movie movie = movieRepository.save(Movie.builder().titulo("Redis Test Movie").duracionMinutos(120).estado(com.cinezone.demo.model.enums.MovieStatus.EN_CARTELERA).build());
-        Cinema cinema = cinemaRepository.save(Cinema.builder().nombre("Sede Redis").activa(true).build());
+        Cinema cinema = cinemaRepository.save(Cinema.builder().nombre("Sede Redis").ciudad("Test City").direccion("Test Address").activa(true).build());
         Auditorium auditorium = auditoriumRepository.save(Auditorium.builder().nombre("Sala Redis").cinema(cinema).tipo("REGULAR").activa(true).capacidadTotal(100).build());
         showtime = showtimeRepository.save(Showtime.builder().movie(movie).auditorium(auditorium).cinema(cinema).activa(true).precioMultiplicador(java.math.BigDecimal.ONE).fechaHora(java.time.LocalDateTime.now().plusDays(1)).formatoProyeccion(com.cinezone.demo.model.enums.ProjectionFormat.FORMAT_2D).build());
         seat = seatRepository.save(Seat.builder().auditorium(auditorium).fila('A').numero(1).tipo(com.cinezone.demo.model.enums.SeatType.ESTANDAR).build());
