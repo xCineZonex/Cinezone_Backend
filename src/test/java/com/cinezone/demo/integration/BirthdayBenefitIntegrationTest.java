@@ -183,7 +183,7 @@ public class BirthdayBenefitIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMIN_SEDE")
     void test7_EndpointAdminSede() throws Exception {
-        mockMvc.perform(patch("/api/admin/sedes/" + sedeNormal.getId() + "/beneficio-vip-cumpleanos")
+        mockMvc.perform(patch("/api/v1/admin/sedes/" + sedeNormal.getId() + "/beneficio-vip-cumpleanos")
                 .param("habilitado", "true")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
