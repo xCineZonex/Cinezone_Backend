@@ -522,7 +522,7 @@ public class BookingServiceImpl implements BookingService {
                 if (validForThisRoom) {
                     int cantidadBenefit = b.getCantidad() != null ? b.getCantidad() : 1;
                     java.util.Map<String, Object> benMap = new java.util.HashMap<>();
-                    benMap.put("nombre", "Entrada CumpleaÃƒÂ±os (" + b.getTipoEntrada().name() + ")");
+                    benMap.put("nombre", "Entrada Cumpleanos (" + b.getTipoEntrada().name() + ")");
                     benMap.put("tipo", "BENEFICIO_CUMPLEANOS");
                     benMap.put("precio", java.math.BigDecimal.ZERO);
                     benMap.put("pendingBenefitId", b.getId());
@@ -767,7 +767,7 @@ public class BookingServiceImpl implements BookingService {
                                 .type(com.cinezone.demo.model.entity.InventoryMovement.MovementType.ENTRADA)
                                 .cantidad(s.getCantidad())
                                 .resultingStock(newStock)
-                                .motivo("AnulaciÃƒÂ³n de Boleta " + booking.getCodigoUnico() + " | " + motivo)
+                                .motivo("Anulacion de Boleta " + booking.getCodigoUnico() + " | " + motivo)
                                 .registeredBy(currentUser)
                                 .build();
                         inventoryMovementRepository.save(mov);
