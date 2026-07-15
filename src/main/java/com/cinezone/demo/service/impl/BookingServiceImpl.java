@@ -50,7 +50,7 @@ public class BookingServiceImpl implements BookingService {
     @org.springframework.beans.factory.annotation.Value("${cinezone.seat.lock.ttl.seconds:300}")
     private long seatLockTtlSeconds;
 
-    // Métodos delegados para cálculo dinámico
+    // MÃ©todos delegados para cÃ¡lculo dinÃ¡mico
 
     @Override
     @Transactional
@@ -63,7 +63,7 @@ public class BookingServiceImpl implements BookingService {
             String existingVal = (String) redisTemplate.opsForValue().get(redisIdempKey);
             if (existingVal != null) {
                 if ("PROCESSING".equals(existingVal)) {
-                    throw new BusinessRuleException("Transacción en curso, por favor espere.");
+                    throw new BusinessRuleException("TransacciÃ³n en curso, por favor espere.");
                 } else {
                     try {
                         return objectMapper.readValue(existingVal, PurchaseResponseDTO.class);
@@ -75,28 +75,28 @@ public class BookingServiceImpl implements BookingService {
             // Lock de 1 minuto para evitar doble clic concurrente
             Boolean isFirst = redisTemplate.opsForValue().setIfAbsent(redisIdempKey, "PROCESSING", 1, java.util.concurrent.TimeUnit.MINUTES);
             if (Boolean.FALSE.equals(isFirst)) {
-                throw new BusinessRuleException("Transacción en curso concurrente, por favor espere.");
+                throw new BusinessRuleException("TransacciÃ³n en curso concurrente, por favor espere.");
             }
         }
 
         try {
-            // 1. VALIDACIÓN INICIAL: ¿Qué está comprando?
+            // 1. VALIDACIÃ“N INICIAL: Â¿QuÃ© estÃ¡ comprando?
         boolean hasTickets = request.asientos() != null && !request.asientos().isEmpty();
         boolean hasSnacks = request.snacks() != null && !request.snacks().isEmpty();
 
         if (!hasTickets && !hasSnacks) {
-            throw new BusinessRuleException("El carrito está vacío. Debe seleccionar entradas o snacks.");
+            throw new BusinessRuleException("El carrito estÃ¡ vacÃ­o. Debe seleccionar entradas o snacks.");
         }
 
         if (hasTickets && request.funcionId() == null) {
-            throw new BusinessRuleException("Debe especificar una función para la compra de entradas.");
+            throw new BusinessRuleException("Debe especificar una funciÃ³n para la compra de entradas.");
         }
 
         Showtime showtime = null;
         Long resolvedSedeId = request.sedeId();
         if (request.funcionId() != null) {
             showtime = showtimeRepository.findById(request.funcionId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Función no encontrada"));
+                    .orElseThrow(() -> new ResourceNotFoundException("FunciÃ³n no encontrada"));
             if (resolvedSedeId == null) {
                 resolvedSedeId = showtime.getAuditorium().getCinema().getId();
             }
@@ -111,20 +111,20 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // ==========================================
-        // Lógica de Venta en Taquilla delegada
+        // LÃ³gica de Venta en Taquilla delegada
         // ==========================================
         User buyerUser = taquillaService.resolveBuyerUser(currentUser, request.clienteId());
-        // Re-adjuntar a la sesión de Hibernate actual para evitar LazyInitializationException
+        // Re-adjuntar a la sesiÃ³n de Hibernate actual para evitar LazyInitializationException
         if (buyerUser != null && buyerUser.getId() != null) {
             buyerUser = userRepository.findById(buyerUser.getId()).orElse(buyerUser);
         }
 
-        // 2. VALIDACIÓN DE CANTIDAD DE ENTRADAS
+        // 2. VALIDACIÃ“N DE CANTIDAD DE ENTRADAS
         if (hasTickets && request.asientos().size() > 10) {
-            throw new BusinessRuleException("No puedes comprar más de 10 entradas por transacción.");
+            throw new BusinessRuleException("No puedes comprar mÃ¡s de 10 entradas por transacciÃ³n.");
         }
 
-        // 3. VALIDACIÓN DE PRECIOS Y REDIS (ENTRADAS Y SNACKS)
+        // 3. VALIDACIÃ“N DE PRECIOS Y REDIS (ENTRADAS Y SNACKS)
         BigDecimal expectedTotal = BigDecimal.ZERO;
 
         // A. Calcular total de Entradas y validar en Redis
@@ -134,7 +134,7 @@ public class BookingServiceImpl implements BookingService {
                 String lockOwner = (String) redisTemplate.opsForValue().get(redisKey);
 
                 if (lockOwner == null || !lockOwner.equals(currentUser.getId().toString())) {
-                    throw new BusinessRuleException("El tiempo de reserva expiró o el asiento no te pertenece.");
+                    throw new BusinessRuleException("El tiempo de reserva expirÃ³ o el asiento no te pertenece.");
                 }
 
                 if (seatReq.pendingBenefitId() != null) {
@@ -142,10 +142,10 @@ public class BookingServiceImpl implements BookingService {
                     if (pendingBen != null && pendingBen.getEstado() == com.cinezone.demo.model.enums.BenefitStatus.DISPONIBLE) {
                         String salaTipo = showtime.getAuditorium().getTipo();
                         if (pendingBen.getTipoEntrada() == com.cinezone.demo.model.enums.TipoEntrada.GENERAL_2D && "VIP".equals(salaTipo)) {
-                            throw new BusinessRuleException("El beneficio no es válido para salas VIP.");
+                            throw new BusinessRuleException("El beneficio no es vÃ¡lido para salas VIP.");
                         }
                     } else {
-                        throw new BusinessRuleException("El beneficio de cumpleaños ya no está disponible.");
+                        throw new BusinessRuleException("El beneficio de cumpleaÃ±os ya no estÃ¡ disponible.");
                     }
                 } else {
                     expectedTotal = expectedTotal.add(priceCalculationService.calculateTicketPrice(showtime, seatReq.tipoEntrada()));
@@ -177,15 +177,15 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
-        // 4. VALIDACIÓN DEL MONTO TOTAL (Usamos el calculado por el servidor para seguridad)
+        // 4. VALIDACIÃ“N DEL MONTO TOTAL (Usamos el calculado por el servidor para seguridad)
         if (request.montoTotalPago().subtract(expectedTotal).abs().compareTo(new BigDecimal("0.1")) > 0) {
             System.err.println("Monto mismatch: Frontend=" + request.montoTotalPago() + ", Backend=" + expectedTotal);
-            // throw new BusinessRuleException("El monto total enviado no coincide con el cálculo del servidor.");
+            // throw new BusinessRuleException("El monto total enviado no coincide con el cÃ¡lculo del servidor.");
         }
         
-        BigDecimal finalTotal = expectedTotal; // Priorizamos el cálculo del servidor
+        BigDecimal finalTotal = expectedTotal; // Priorizamos el cÃ¡lculo del servidor
 
-        // 4.5. VALIDACIÓN PESIMISTA DE LÍMITE MENSUAL DE BENEFICIOS
+        // 4.5. VALIDACIÃ“N PESIMISTA DE LÃMITE MENSUAL DE BENEFICIOS
         if (hasTickets) {
             java.util.Map<Long, Integer> benefitUsageReq = new java.util.HashMap<>();
             for (var seatReq : request.asientos()) {
@@ -232,7 +232,7 @@ public class BookingServiceImpl implements BookingService {
                         }
                         if (usage.getUsos() + requestedCount > ben.getMonthlyLimit()) {
                             throw new com.cinezone.demo.exception.BenefitMonthlyLimitExceededException(
-                                "Límite mensual excedido para el beneficio: " + ben.getName()
+                                "LÃ­mite mensual excedido para el beneficio: " + ben.getName()
                             );
                         }
                         usage.setUsos(usage.getUsos() + requestedCount);
@@ -289,7 +289,7 @@ public class BookingServiceImpl implements BookingService {
                                         (benFmt.equals("FORMAT_3D") && "3D".equals(showFmt));
                         if (!match) {
                             throw new com.cinezone.demo.exception.BenefitFormatMismatchException(
-                                "El beneficio '" + ben.getName() + "' solo es válido para formato " + benFmt + " pero la función es " + showFmt
+                                "El beneficio '" + ben.getName() + "' solo es vÃ¡lido para formato " + benFmt + " pero la funciÃ³n es " + showFmt
                             );
                         }
                     }
@@ -328,10 +328,10 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
-        // 8. YA NO SE ACTUALIZAN PUNTOS AQUÍ (Se hará en confirmPurchase cuando se pague)
+        // 8. YA NO SE ACTUALIZAN PUNTOS AQUÃ (Se harÃ¡ en confirmPurchase cuando se pague)
         
         // 9. GENERAR QR Y RESPUESTA
-        String infoCine = (showtime != null) ? showtime.getMovie().getTitulo() : "SOLO DULCERÍA";
+        String infoCine = (showtime != null) ? showtime.getMovie().getTitulo() : "SOLO DULCERÃA";
         String infoSala = (showtime != null) ? showtime.getAuditorium().getNombre() : "N/A";
         String sedeNombre = (showtime != null) ? showtime.getCinema().getNombre() : "Cinezone Digital";
         String sedeCiudad = (showtime != null) ? showtime.getCinema().getCiudad() : "Lima";
@@ -409,7 +409,7 @@ public class BookingServiceImpl implements BookingService {
     public void lockSeat(com.cinezone.demo.dto.LockSeatRequestDTO request, User currentUser) {
         String redisKey = "asiento:" + request.funcionId() + ":" + request.asientoId();
         
-        // Intentar setear la llave solo si no existe, con expiración de 5 minutos (300 segundos)
+        // Intentar setear la llave solo si no existe, con expiraciÃ³n de 5 minutos (300 segundos)
         Boolean success = redisTemplate.opsForValue().setIfAbsent(
                 redisKey, 
                 currentUser.getId().toString(), 
@@ -417,20 +417,20 @@ public class BookingServiceImpl implements BookingService {
         );
         
         if (Boolean.FALSE.equals(success)) {
-            // Verificar si el asiento ya está bloqueado por el mismo usuario (renovar expiración)
+            // Verificar si el asiento ya estÃ¡ bloqueado por el mismo usuario (renovar expiraciÃ³n)
             String lockOwner = (String) redisTemplate.opsForValue().get(redisKey);
             if (lockOwner != null && lockOwner.equals(currentUser.getId().toString())) {
                 redisTemplate.expire(redisKey, java.time.Duration.ofSeconds(seatLockTtlSeconds));
                 return;
             }
-            throw new BusinessRuleException("El asiento seleccionado ya está siendo reservado por otra persona.");
+            throw new BusinessRuleException("El asiento seleccionado ya estÃ¡ siendo reservado por otra persona.");
         }
     }
 
     @Override
     public java.util.List<java.util.Map<String, Object>> getTicketTypes(Long showtimeId, User currentUser) {
         Showtime showtime = showtimeRepository.findById(showtimeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Función no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("FunciÃ³n no encontrada"));
 
         String rawFormato = showtime.getFormatoProyeccion() != null ? showtime.getFormatoProyeccion().name() : "FORMAT_2D";
         String showFormato = rawFormato.replace("FORMAT_", "").toUpperCase();
@@ -462,13 +462,13 @@ public class BookingServiceImpl implements BookingService {
                 continue;
             }
 
-            // Verificar si está desactivada explícitamente para esta sede
+            // Verificar si estÃ¡ desactivada explÃ­citamente para esta sede
             TicketTypeSedePrice sedePrice = ticketTypeSedePriceRepository.findByCinemaIdAndTicketBasePriceId(sedeId, base.getId()).orElse(null);
             if (sedePrice != null && !sedePrice.getIsActive()) {
                 continue;
             }
 
-            // Filtrar por Formato de Proyección
+            // Filtrar por Formato de ProyecciÃ³n
             // Permitimos coincidencias parciales para que "VIP 2D" coincida con "2D"
             String baseFormato = base.getFormato() != null ? base.getFormato().replace("FORMAT_", "").toUpperCase() : "2D";
             
@@ -508,7 +508,7 @@ public class BookingServiceImpl implements BookingService {
         if (currentUser != null && currentUser.getRol() == com.cinezone.demo.model.enums.Role.CLIENT) {
             java.time.LocalDateTime now = java.time.LocalDateTime.now();
             List<com.cinezone.demo.model.entity.PendingBenefit> benefits = pendingBenefitRepository.findByUserAndTipoBeneficioAndEstadoAndFechaExpiracionAfter(
-                currentUser, "ENTRADA_GRATIS_CUMPLEAÑOS", com.cinezone.demo.model.enums.BenefitStatus.DISPONIBLE, now);
+                currentUser, "ENTRADA_GRATIS_CUMPLEAÃ‘OS", com.cinezone.demo.model.enums.BenefitStatus.DISPONIBLE, now);
             
             if (!benefits.isEmpty()) {
                 com.cinezone.demo.model.entity.PendingBenefit b = benefits.get(0);
@@ -522,7 +522,7 @@ public class BookingServiceImpl implements BookingService {
                 if (validForThisRoom) {
                     int cantidadBenefit = b.getCantidad() != null ? b.getCantidad() : 1;
                     java.util.Map<String, Object> benMap = new java.util.HashMap<>();
-                    benMap.put("nombre", "Entrada Cumpleaños (" + b.getTipoEntrada().name() + ")");
+                    benMap.put("nombre", "Entrada CumpleaÃ±os (" + b.getTipoEntrada().name() + ")");
                     benMap.put("tipo", "BENEFICIO_CUMPLEANOS");
                     benMap.put("precio", java.math.BigDecimal.ZERO);
                     benMap.put("pendingBenefitId", b.getId());
@@ -561,7 +561,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         if (currentUser.getRol() != com.cinezone.demo.model.enums.Role.CLIENT) {
-            return; // Los empleados de taquilla/admin no acumulan puntos por ventas anónimas o directas
+            return; // Los empleados de taquilla/admin no acumulan puntos por ventas anÃ³nimas o directas
         }
 
         int puntosCalculados = 0;
@@ -646,7 +646,7 @@ public class BookingServiceImpl implements BookingService {
                     .user(currentUser)
                     .puntos(puntosCalculados)
                     .tipo(PointType.GANADO)
-                    .descripcion(hasTickets ? "Compra de entradas/snacks" : "Compra solo dulcería")
+                    .descripcion(hasTickets ? "Compra de entradas/snacks" : "Compra solo dulcerÃ­a")
                     .booking(booking)
                     .build());
         }
@@ -689,7 +689,7 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
-        String infoCine = (showtime != null) ? showtime.getMovie().getTitulo() : "SOLO DULCERÍA";
+        String infoCine = (showtime != null) ? showtime.getMovie().getTitulo() : "SOLO DULCERÃA";
         String infoSala = (showtime != null) ? showtime.getAuditorium().getNombre() : "N/A";
         String sedeNombre = (showtime != null) ? showtime.getCinema().getNombre() : "Cinezone Digital";
         String sedeCiudad = (showtime != null) ? showtime.getCinema().getCiudad() : "Lima";
@@ -767,7 +767,7 @@ public class BookingServiceImpl implements BookingService {
                                 .type(com.cinezone.demo.model.entity.InventoryMovement.MovementType.ENTRADA)
                                 .cantidad(s.getCantidad())
                                 .resultingStock(newStock)
-                                .motivo("Anulación de Boleta " + booking.getCodigoUnico() + " | " + motivo)
+                                .motivo("AnulaciÃ³n de Boleta " + booking.getCodigoUnico() + " | " + motivo)
                                 .registeredBy(currentUser)
                                 .build();
                         inventoryMovementRepository.save(mov);
@@ -797,12 +797,12 @@ public class BookingServiceImpl implements BookingService {
                     freshUser.setPuntos(puntosResultantes);
                     userRepository.save(freshUser);
 
-                    // Registrar historial de deducción de puntos por cancelación
+                    // Registrar historial de deducciÃ³n de puntos por cancelaciÃ³n
                     PointHistory descuento = PointHistory.builder()
                             .user(freshUser)
                             .puntos(-puntosADescontar)
                             .tipo(PointType.CANJEADO)
-                            .descripcion("Descuento por anulación de boleta " + booking.getCodigoUnico() + " | " + motivo)
+                            .descripcion("Descuento por anulaciÃ³n de boleta " + booking.getCodigoUnico() + " | " + motivo)
                             .booking(booking)
                             .build();
                     pointHistoryRepository.save(descuento);
@@ -815,14 +815,14 @@ public class BookingServiceImpl implements BookingService {
     @org.springframework.scheduling.annotation.Scheduled(fixedRate = 60000)
     @Transactional
     public void cleanupAbandonedBookings() {
-        // Limpiar reservas pendientes de más de 5 minutos
+        // Limpiar reservas pendientes de mÃ¡s de 5 minutos
         java.time.LocalDateTime limitTime = java.time.LocalDateTime.now().minusMinutes(5);
         java.util.List<Booking> abandonedBookings = bookingRepository.findByEstadoAndFechaCompraBefore(BookingStatus.PENDIENTE, limitTime);
         
         for (Booking booking : abandonedBookings) {
             try {
                 System.out.println("Auto-cancelando boleta abandonada: " + booking.getCodigoUnico());
-                this.cancelBooking(booking.getId(), booking.getUser(), "Tiempo límite de compra expirado (Auto-Cancelación)");
+                this.cancelBooking(booking.getId(), booking.getUser(), "Tiempo lÃ­mite de compra expirado (Auto-CancelaciÃ³n)");
             } catch (Exception e) {
                 System.err.println("Error al auto-cancelar boleta " + booking.getId() + ": " + e.getMessage());
             }

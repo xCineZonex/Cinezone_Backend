@@ -63,7 +63,7 @@ public class LoyaltyService {
         int birthMonth = user.getFechaNacimiento().getMonthValue();
         int birthDay   = user.getFechaNacimiento().getDayOfMonth();
 
-        // Regla para nacidos el 29 de febrero en años no bisiestos
+        // Regla para nacidos el 29 de febrero en aÃ±os no bisiestos
         if (birthMonth == 2 && birthDay == 29 && !today.isLeapYear()) {
             birthDay = 28;
         }
@@ -72,15 +72,15 @@ public class LoyaltyService {
 
             java.time.LocalDateTime startOfYear = java.time.LocalDate.of(today.getYear(), 1, 1).atStartOfDay();
             boolean alreadyReceived = pendingBenefitRepository.existsByUserAndTipoBeneficioAndFechaGanadoAfter(
-                    user, "ENTRADA_GRATIS_CUMPLEAÑOS", startOfYear);
+                    user, "ENTRADA_GRATIS_CUMPLEAÃ‘OS", startOfYear);
 
             if (!alreadyReceived) {
-                // ── Tabla de verdad por nivel + toggle de sede ──────────────
-                // Negro + sede VIP habilitada  → 1 entrada VIP
-                // Negro + sede SIN VIP         → 2 entradas 2D
-                // Dorado (cualquier sede)      → 2 entradas 2D
-                // Azul   (cualquier sede)      → 1 entrada 2D
-                // ────────────────────────────────────────────────────────────
+                // â”€â”€ Tabla de verdad por nivel + toggle de sede â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                // Negro + sede VIP habilitada  â†’ 1 entrada VIP
+                // Negro + sede SIN VIP         â†’ 2 entradas 2D
+                // Dorado (cualquier sede)      â†’ 2 entradas 2D
+                // Azul   (cualquier sede)      â†’ 1 entrada 2D
+                // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 String tierName = user.getTier() != null ? user.getTier().getName() : "Azul";
                 boolean isNegro  = "Negro".equalsIgnoreCase(tierName);
                 boolean isDorado = "Dorado".equalsIgnoreCase(tierName);
@@ -94,26 +94,26 @@ public class LoyaltyService {
                 if (isNegro && sedeVipEnabled) {
                     tipo     = com.cinezone.demo.model.enums.TipoEntrada.VIP;
                     cantidad = 1;
-                    desc     = "¡Feliz Cumpleaños! Tienes 1 entrada VIP gratis (Nivel Negro).";
+                    desc     = "Â¡Feliz CumpleaÃ±os! Tienes 1 entrada VIP gratis (Nivel Negro).";
                 } else if (isNegro) {
                     tipo     = com.cinezone.demo.model.enums.TipoEntrada.GENERAL_2D;
                     cantidad = 2;
-                    desc     = "¡Feliz Cumpleaños! Tienes 2 entradas 2D gratis (Nivel Negro).";
+                    desc     = "Â¡Feliz CumpleaÃ±os! Tienes 2 entradas 2D gratis (Nivel Negro).";
                 } else if (isDorado) {
                     tipo     = com.cinezone.demo.model.enums.TipoEntrada.GENERAL_2D;
                     cantidad = 2;
-                    desc     = "¡Feliz Cumpleaños! Tienes 2 entradas 2D gratis (Nivel Dorado).";
+                    desc     = "Â¡Feliz CumpleaÃ±os! Tienes 2 entradas 2D gratis (Nivel Dorado).";
                 } else {
-                    // Azul u otro nivel sin definir → mínimo garantizado
+                    // Azul u otro nivel sin definir â†’ mÃ­nimo garantizado
                     tipo     = com.cinezone.demo.model.enums.TipoEntrada.GENERAL_2D;
                     cantidad = 1;
-                    desc     = "¡Feliz Cumpleaños! Tienes 1 entrada 2D gratis (Nivel Azul).";
+                    desc     = "Â¡Feliz CumpleaÃ±os! Tienes 1 entrada 2D gratis (Nivel Azul).";
                 }
 
                 com.cinezone.demo.model.entity.PendingBenefit benefit =
                         com.cinezone.demo.model.entity.PendingBenefit.builder()
                                 .user(user)
-                                .tipoBeneficio("ENTRADA_GRATIS_CUMPLEAÑOS")
+                                .tipoBeneficio("ENTRADA_GRATIS_CUMPLEAÃ‘OS")
                                 .descripcion(desc)
                                 .estado(com.cinezone.demo.model.enums.BenefitStatus.DISPONIBLE)
                                 .fechaGanado(java.time.LocalDateTime.now(java.time.ZoneId.of("America/Lima")))
@@ -122,7 +122,7 @@ public class LoyaltyService {
                                 .cantidad(cantidad)
                                 .build();
                 pendingBenefitRepository.save(benefit);
-                System.out.println("✅ CUMPLEAÑOS → " + user.getCorreo() +
+                System.out.println("âœ… CUMPLEAÃ‘OS â†’ " + user.getCorreo() +
                         " | Nivel: " + tierName +
                         " | Tipo: " + tipo +
                         " | Cantidad: " + cantidad);
@@ -138,13 +138,13 @@ public class LoyaltyService {
         int searchMonth = today.getMonthValue();
         int searchDay = today.getDayOfMonth();
         
-        // Si hoy es 28 de febrero y no es bisiesto, buscar también a los del 29
+        // Si hoy es 28 de febrero y no es bisiesto, buscar tambiÃ©n a los del 29
         java.util.List<User> birthdayUsers = new java.util.ArrayList<>(userRepository.findUsersByBirthday(searchMonth, searchDay));
         if (searchMonth == 2 && searchDay == 28 && !today.isLeapYear()) {
             birthdayUsers.addAll(userRepository.findUsersByBirthday(2, 29));
         }
         
-        System.out.println("🎂 Procesando beneficios de cumpleaños para " + birthdayUsers.size() + " usuarios...");
+        System.out.println("ðŸŽ‚ Procesando beneficios de cumpleaÃ±os para " + birthdayUsers.size() + " usuarios...");
         for (User user : birthdayUsers) {
             assignBirthdayBenefitIfApplicable(user);
         }
@@ -158,7 +158,7 @@ public class LoyaltyService {
         if (!user.getEsSocio()) return; 
 
         List<LoyaltyTier> tiers = tierRepository.findAll();
-        // Ordenar de mayor a menor requisito de visitas para encontrar el nivel más alto alcanzable
+        // Ordenar de mayor a menor requisito de visitas para encontrar el nivel mÃ¡s alto alcanzable
         tiers.sort((t1, t2) -> t2.getRequiredYearlyVisits().compareTo(t1.getRequiredYearlyVisits()));
 
         for (LoyaltyTier tier : tiers) {
@@ -170,7 +170,7 @@ public class LoyaltyService {
                 if (user.getTier() == null || !user.getTier().getId().equals(tier.getId())) {
                     user.setTier(tier);
                     userRepository.save(user);
-                    System.out.println("✅ USUARIO PROMOCIONADO: " + user.getCorreo() + " ahora es nivel " + tier.getName());
+                    System.out.println("âœ… USUARIO PROMOCIONADO: " + user.getCorreo() + " ahora es nivel " + tier.getName());
                 }
                 break; 
             }
