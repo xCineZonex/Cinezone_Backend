@@ -71,16 +71,10 @@ public class LoyaltyService {
         if (birthMonth == today.getMonthValue() && birthDay == today.getDayOfMonth()) {
 
             java.time.LocalDateTime startOfYear = java.time.LocalDate.of(today.getYear(), 1, 1).atStartOfDay();
-            boolean alreadyReceived = pendingBenefitRepository.existsByUserAndTipoBeneficioAndFechaGanadoAfter(
-                    user, "ENTRADA_GRATIS_CUMPLEAÃƒâ€˜OS", startOfYear);
+            boolean yaAsignado = pendingBenefitRepository.existsByUserAndTipoBeneficioAndFechaGanadoAfter(
+                    user, com.cinezone.demo.util.AppConstants.BENEFICIO_CUMPLEANOS, startOfYear);
 
-            if (!alreadyReceived) {
-                // Ã¢â€â‚¬Ã¢â€â‚¬ Tabla de verdad por nivel + toggle de sede Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-                // Negro + sede VIP habilitada  Ã¢â€ â€™ 1 entrada VIP
-                // Negro + sede SIN VIP         Ã¢â€ â€™ 2 entradas 2D
-                // Dorado (cualquier sede)      Ã¢â€ â€™ 2 entradas 2D
-                // Azul   (cualquier sede)      Ã¢â€ â€™ 1 entrada 2D
-                // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+            if (!yaAsignado) {
                 String tierName = user.getTier() != null ? user.getTier().getName() : "Azul";
                 boolean isNegro  = "Negro".equalsIgnoreCase(tierName);
                 boolean isDorado = "Dorado".equalsIgnoreCase(tierName);
@@ -94,26 +88,25 @@ public class LoyaltyService {
                 if (isNegro && sedeVipEnabled) {
                     tipo     = com.cinezone.demo.model.enums.TipoEntrada.VIP;
                     cantidad = 1;
-                    desc     = "Ã‚Â¡Feliz CumpleaÃƒÂ±os! Tienes 1 entrada VIP gratis (Nivel Negro).";
+                    desc     = "¡Feliz Cumpleaños! Tienes 1 entrada VIP gratis (Nivel Negro).";
                 } else if (isNegro) {
                     tipo     = com.cinezone.demo.model.enums.TipoEntrada.GENERAL_2D;
                     cantidad = 2;
-                    desc     = "Ã‚Â¡Feliz CumpleaÃƒÂ±os! Tienes 2 entradas 2D gratis (Nivel Negro).";
+                    desc     = "¡Feliz Cumpleaños! Tienes 2 entradas 2D gratis (Nivel Negro).";
                 } else if (isDorado) {
                     tipo     = com.cinezone.demo.model.enums.TipoEntrada.GENERAL_2D;
                     cantidad = 2;
-                    desc     = "Ã‚Â¡Feliz CumpleaÃƒÂ±os! Tienes 2 entradas 2D gratis (Nivel Dorado).";
+                    desc     = "¡Feliz Cumpleaños! Tienes 2 entradas 2D gratis (Nivel Dorado).";
                 } else {
-                    // Azul u otro nivel sin definir Ã¢â€ â€™ mÃƒÂ­nimo garantizado
                     tipo     = com.cinezone.demo.model.enums.TipoEntrada.GENERAL_2D;
                     cantidad = 1;
-                    desc     = "Ã‚Â¡Feliz CumpleaÃƒÂ±os! Tienes 1 entrada 2D gratis (Nivel Azul).";
+                    desc     = "¡Feliz Cumpleaños! Tienes 1 entrada 2D gratis (Nivel Azul).";
                 }
 
                 com.cinezone.demo.model.entity.PendingBenefit benefit =
                         com.cinezone.demo.model.entity.PendingBenefit.builder()
                                 .user(user)
-                                .tipoBeneficio("ENTRADA_GRATIS_CUMPLEAÃƒâ€˜OS")
+                                .tipoBeneficio(com.cinezone.demo.util.AppConstants.BENEFICIO_CUMPLEANOS)
                                 .descripcion(desc)
                                 .estado(com.cinezone.demo.model.enums.BenefitStatus.DISPONIBLE)
                                 .fechaGanado(java.time.LocalDateTime.now(java.time.ZoneId.of("America/Lima")))

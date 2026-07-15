@@ -131,7 +131,7 @@ public class BirthdayBenefitIntegrationTest {
 
         List<PendingBenefit> benefits = pendingBenefitRepository.findByEstado(BenefitStatus.DISPONIBLE);
         assertFalse(benefits.isEmpty());
-        assertEquals("ENTRADA_GRATIS_CUMPLEAÃƒâ€˜OS", benefits.get(0).getTipoBeneficio());
+        assertEquals(com.cinezone.demo.util.AppConstants.BENEFICIO_CUMPLEANOS, benefits.get(0).getTipoBeneficio());
     }
 
     @Test
