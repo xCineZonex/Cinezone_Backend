@@ -202,41 +202,46 @@ public class BookingServiceImpl implements BookingService {
                     Integer requestedCount = entry.getValue();
                     com.cinezone.demo.model.entity.TicketBenefit ben = ticketBenefitRepository.findById(benId).orElse(null);
                     if (ben != null) {
+                        int tCount = ben.getTicketCount() != null ? ben.getTicketCount() : 1;
+                        int bundleCount = requestedCount / tCount;
+                        if (bundleCount == 0) bundleCount = 1; // Fallback in case of weird payload
+                        
                         int puntosReq = ben.getPointsRequired() != null ? ben.getPointsRequired() : 0;
-                        int ptsGastados = puntosReq * requestedCount;
+                        int ptsGastados = puntosReq * bundleCount;
                         if (ptsGastados > 0) {
                             int puntosUser = buyerUser.getPuntos() != null ? buyerUser.getPuntos() : 0;
                             if (puntosUser < ptsGastados) {
                                 throw new BusinessRuleException("Puntos insuficientes para canjear beneficio. Puntos actuales: " + puntosUser);
                             }
                         }
-                    }
-                    if (ben != null && ben.getMonthlyLimit() != null && ben.getMonthlyLimit() > 0) {
-                        com.cinezone.demo.model.entity.BenefitMonthlyUsage usage;
-                        final com.cinezone.demo.model.entity.User finalBuyerUser = buyerUser;
-                        final com.cinezone.demo.model.entity.TicketBenefit finalBen = ben;
-                        try {
-                            usage = benefitMonthlyUsageRepository.findForUpdate(buyerUser.getId(), benId, currentMonth, currentYear)
-                                .orElseGet(() -> benefitMonthlyUsageRepository.saveAndFlush(
-                                    com.cinezone.demo.model.entity.BenefitMonthlyUsage.builder()
-                                        .user(finalBuyerUser)
-                                        .benefit(finalBen)
-                                        .mes(currentMonth)
-                                        .anio(currentYear)
-                                        .usos(0)
-                                        .build()
-                                ));
-                        } catch (org.springframework.dao.DataIntegrityViolationException e) {
-                            usage = benefitMonthlyUsageRepository.findForUpdate(buyerUser.getId(), benId, currentMonth, currentYear)
-                                .orElseThrow(() -> new RuntimeException("Error de concurrencia al procesar beneficio"));
+                        
+                        if (ben.getMonthlyLimit() != null && ben.getMonthlyLimit() > 0) {
+                            com.cinezone.demo.model.entity.BenefitMonthlyUsage usage;
+                            final com.cinezone.demo.model.entity.User finalBuyerUser = buyerUser;
+                            final com.cinezone.demo.model.entity.TicketBenefit finalBen = ben;
+                            try {
+                                usage = benefitMonthlyUsageRepository.findForUpdate(buyerUser.getId(), benId, currentMonth, currentYear)
+                                    .orElseGet(() -> benefitMonthlyUsageRepository.saveAndFlush(
+                                        com.cinezone.demo.model.entity.BenefitMonthlyUsage.builder()
+                                            .user(finalBuyerUser)
+                                            .benefit(finalBen)
+                                            .mes(currentMonth)
+                                            .anio(currentYear)
+                                            .usos(0)
+                                            .build()
+                                    ));
+                            } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                                usage = benefitMonthlyUsageRepository.findForUpdate(buyerUser.getId(), benId, currentMonth, currentYear)
+                                    .orElseThrow(() -> new RuntimeException("Error de concurrencia al procesar beneficio"));
+                            }
+                            if (usage.getUsos() + bundleCount > ben.getMonthlyLimit()) {
+                                throw new com.cinezone.demo.exception.BenefitMonthlyLimitExceededException(
+                                    "Limite mensual excedido para el beneficio: " + ben.getName()
+                                );
+                            }
+                            usage.setUsos(usage.getUsos() + bundleCount);
+                            benefitMonthlyUsageRepository.save(usage);
                         }
-                        if (usage.getUsos() + requestedCount > ben.getMonthlyLimit()) {
-                            throw new com.cinezone.demo.exception.BenefitMonthlyLimitExceededException(
-                                "LÃƒÂ­mite mensual excedido para el beneficio: " + ben.getName()
-                            );
-                        }
-                        usage.setUsos(usage.getUsos() + requestedCount);
-                        benefitMonthlyUsageRepository.save(usage);
                     }
                 }
             }
@@ -604,17 +609,32 @@ public class BookingServiceImpl implements BookingService {
 
             // Increment benefit usage and deduct points
             int puntosGastados = 0;
+            // Group tickets by benefit to count bundles
+            java.util.Map<Long, Integer> benTicketsCount = new java.util.HashMap<>();
             for (Ticket t : tickets) {
                 if (t.getBeneficioId() != null) {
+                    benTicketsCount.put(t.getBeneficioId(), benTicketsCount.getOrDefault(t.getBeneficioId(), 0) + 1);
+                }
+            }
+            
+            for (java.util.Map.Entry<Long, Integer> entry : benTicketsCount.entrySet()) {
+                Long benId = entry.getKey();
+                Integer tksCount = entry.getValue();
+                
+                com.cinezone.demo.model.entity.TicketBenefit ben = ticketBenefitRepository.findById(benId).orElse(null);
+                if (ben != null) {
+                    int tCount = ben.getTicketCount() != null ? ben.getTicketCount() : 1;
+                    int usos = tksCount / tCount;
+                    if (usos == 0) usos = 1;
+                    
                     java.util.Map<String, Integer> usageMap = currentUser.getMonthlyBenefitUsage();
                     if (usageMap == null) usageMap = new java.util.HashMap<>();
-                    String benId = t.getBeneficioId().toString();
-                    usageMap.put(benId, usageMap.getOrDefault(benId, 0) + 1);
+                    String benIdStr = benId.toString();
+                    usageMap.put(benIdStr, usageMap.getOrDefault(benIdStr, 0) + usos);
                     currentUser.setMonthlyBenefitUsage(usageMap);
                     
-                    com.cinezone.demo.model.entity.TicketBenefit ben = ticketBenefitRepository.findById(t.getBeneficioId()).orElse(null);
-                    if (ben != null && ben.getPointsRequired() != null && ben.getPointsRequired() > 0) {
-                        puntosGastados += ben.getPointsRequired();
+                    if (ben.getPointsRequired() != null && ben.getPointsRequired() > 0) {
+                        puntosGastados += ben.getPointsRequired() * usos;
                     }
                 }
             }
