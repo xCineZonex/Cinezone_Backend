@@ -40,7 +40,7 @@ public class DashboardServiceImpl implements DashboardService {
         BigDecimal ingresosTotales = bookingRepository.calculateTotalSalesAll(startOfDay, endOfDay);
         if (ingresosTotales == null) ingresosTotales = BigDecimal.ZERO;
 
-        BigDecimal ingresosDulceria = bookingSnackRepository.calculateTotalSnackRevenue(null, startOfDay, endOfDay);
+        BigDecimal ingresosDulceria = bookingSnackRepository.calculateTotalSnackRevenueGlobal(startOfDay, endOfDay);
         if (ingresosDulceria == null) ingresosDulceria = BigDecimal.ZERO;
         
         double margenDulceria;

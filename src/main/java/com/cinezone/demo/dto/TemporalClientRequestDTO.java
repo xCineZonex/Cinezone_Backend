@@ -6,5 +6,5 @@ public record TemporalClientRequestDTO(
         @NotBlank String dni,
         @NotBlank String nombre,
         @NotBlank String apellido,
-        String celular
+        @jakarta.validation.constraints.Pattern(regexp = "^9\\d{8}$", message = "El celular debe tener 9 números y empezar con 9") String celular
 ) {}

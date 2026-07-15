@@ -968,7 +968,17 @@ public class AdminCatalogServiceImpl implements AdminCatalogService {
                 
         java.util.List<ComboRecipe> recipes = comboRecipeRepository.findByComboProductId(combo.getId());
         if (recipes.isEmpty()) {
-            throw new com.cinezone.demo.exception.BusinessRuleException("El producto no tiene receta de combo configurada");
+            ProductStock stock = productStockRepository.findByProductIdAndCinemaId(combo.getId(), cinema.getId())
+                    .orElseGet(() -> ProductStock.builder()
+                            .product(combo)
+                            .cinema(cinema)
+                            .stock(0)
+                            .isActive(true)
+                            .build());
+            stock.setStock(stock.getStock() + request.quantityToGenerate());
+            productStockRepository.save(stock);
+            redisStockService.syncStock(combo.getId(), cinema.getId(), stock.getStock());
+            return;
         }
         
         // 1. Validar que todos los insumos tienen stock suficiente

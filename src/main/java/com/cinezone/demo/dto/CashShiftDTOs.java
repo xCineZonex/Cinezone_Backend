@@ -23,6 +23,7 @@ public class CashShiftDTOs {
             BigDecimal ventasOtros,
             BigDecimal ingresosAdicionales,
             BigDecimal egresos,
+            BigDecimal anulaciones,
             BigDecimal montoEsperado,
             BigDecimal montoDeclarado,
             BigDecimal descuadre,

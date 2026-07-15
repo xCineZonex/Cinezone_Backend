@@ -40,6 +40,7 @@ public class CashMovement {
 
     public enum MovementType {
         INGRESO,
-        EGRESO
+        EGRESO,
+        ANULACION
     }
 }

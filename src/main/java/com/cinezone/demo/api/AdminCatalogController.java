@@ -172,6 +172,11 @@ public class AdminCatalogController {
         return ResponseEntity.ok(catalogService.toggleAuditoriumMaintenance(id, activar));
     }
 
+    @PutMapping("/salas/{id}")
+    public ResponseEntity<com.cinezone.demo.dto.AuditoriumDTO> updateAuditorium(@PathVariable Long id, @RequestBody com.cinezone.demo.dto.AdminCatalogDTOs.AuditoriumUpdateDTO request) {
+        return ResponseEntity.ok(catalogService.updateAuditorium(id, request));
+    }
+
     @PostMapping("/productos/{id}/generar-stock")
     public ResponseEntity<Void> generateComboStockParam(@PathVariable Long id, @RequestParam int stockGenerado, @RequestParam Long sedeId) {
         catalogService.generateComboStock(new ComboStockGenerateDTO(id, stockGenerado, sedeId));

@@ -14,7 +14,7 @@ public record UserAdminUpdateDTO(
         @Email @NotBlank String correo,
         String tipoDocumento,
         @NotBlank @Size(min = 8, max = 15) String dni,
-        @NotBlank @Size(min = 9, max = 15) String celular,
+        @jakarta.validation.constraints.Pattern(regexp = "^9\\d{8}$", message = "El celular debe tener 9 números y empezar con 9") String celular,
         @NotNull Role rol,
         Set<Long> sedesIds
 ) {}

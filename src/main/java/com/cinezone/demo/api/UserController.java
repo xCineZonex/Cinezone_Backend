@@ -57,7 +57,7 @@ public class UserController {
     public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getSales(@org.springframework.security.core.annotation.AuthenticationPrincipal com.cinezone.demo.model.entity.User user) {
         java.util.List<com.cinezone.demo.model.entity.Booking> userBookings = bookingRepository.findByEmployee_IdAndEstadoInOrderByFechaCompraDesc(
                 user.getId(),
-                java.util.List.of(com.cinezone.demo.model.enums.BookingStatus.VALIDA, com.cinezone.demo.model.enums.BookingStatus.USADA)
+                java.util.List.of(com.cinezone.demo.model.enums.BookingStatus.VALIDA, com.cinezone.demo.model.enums.BookingStatus.USADA, com.cinezone.demo.model.enums.BookingStatus.CANCELADA)
         );
         
         java.util.List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
@@ -68,6 +68,7 @@ public class UserController {
             map.put("montoTotal", b.getMontoTotal());
             map.put("estado", b.getEstado().name());
             map.put("fechaCompra", b.getFechaCompra());
+            map.put("metodoPago", b.getMetodoPago() != null ? b.getMetodoPago() : "Desconocido");
             
             if (b.getShowtime() != null) {
                 map.put("fechaFuncion", b.getShowtime().getFechaHora());

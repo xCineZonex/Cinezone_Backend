@@ -16,4 +16,7 @@ public interface CashMovementRepository extends JpaRepository<CashMovement, Long
 
     @Query("SELECT SUM(c.amount) FROM CashMovement c WHERE c.cashShift.id = :shiftId AND c.type = 'EGRESO'")
     BigDecimal sumEgresosByShift(@Param("shiftId") Long shiftId);
+
+    @Query("SELECT SUM(c.amount) FROM CashMovement c WHERE c.cashShift.id = :shiftId AND c.type = 'ANULACION'")
+    BigDecimal sumAnulacionesByShift(@Param("shiftId") Long shiftId);
 }
