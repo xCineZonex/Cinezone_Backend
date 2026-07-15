@@ -17,7 +17,7 @@ public interface CinemaRepository extends JpaRepository<Cinema, Long> {
         "            JOIN funciones f ON b.funcion_id = f.id " +
         "            JOIN peliculas p ON f.pelicula_id = p.id " +
         "            WHERE f.sede_id = c.id " +
-        "              AND b.estado IN ('VALIDA', 'USADA', 'PENDIENTE') " +
+        "              AND b.estado IN (com.cinezone.demo.model.enums.BookingStatus.VALIDA, com.cinezone.demo.model.enums.BookingStatus.USADA, com.cinezone.demo.model.enums.BookingStatus.PENDIENTE) " +
         "              AND f.activa = true " +
         "              AND f.fecha_hora <= :now " +
         "              AND (f.fecha_hora + (p.duracion_minutos * interval '1 minute')) >= :now), 0) AS ocupacion_actual " +

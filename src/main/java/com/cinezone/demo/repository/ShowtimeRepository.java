@@ -51,7 +51,7 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
 
     // Ocupacion por sala (nombre sala, tickets vendidos, capacidad)
     @Query("SELECT a.nombre, " +
-           "COALESCE((SELECT COUNT(t) FROM Ticket t JOIN t.booking b WHERE b.showtime.auditorium = a AND b.estado IN ('VALIDA', 'USADA', 'PENDIENTE') AND b.fechaCompra >= :startDate AND b.fechaCompra <= :endDate), 0), " +
+           "COALESCE((SELECT COUNT(t) FROM Ticket t JOIN t.booking b WHERE b.showtime.auditorium = a AND b.estado IN (com.cinezone.demo.model.enums.BookingStatus.VALIDA, com.cinezone.demo.model.enums.BookingStatus.USADA, com.cinezone.demo.model.enums.BookingStatus.PENDIENTE) AND b.fechaCompra >= :startDate AND b.fechaCompra <= :endDate), 0), " +
            "a.capacidadTotal " +
            "FROM Auditorium a WHERE a.cinema.id = :sedeId OR :sedeId IS NULL " +
            "GROUP BY a.id, a.nombre, a.capacidadTotal " +

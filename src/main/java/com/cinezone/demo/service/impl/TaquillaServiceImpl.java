@@ -221,9 +221,14 @@ public class TaquillaServiceImpl implements TaquillaService {
             return new com.cinezone.demo.dto.CashShiftDTOs.CashShiftResponseDTO(null, null, null, null, null, null, null, null, null, null, null, null, "CERRADA", null);
         }
         var shift = opt.get();
-        BigDecimal salesEf = bookingRepository.sumTotalByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt());
+        java.util.Collection<com.cinezone.demo.model.enums.BookingStatus> estadosValidos = java.util.Arrays.asList(
+                com.cinezone.demo.model.enums.BookingStatus.VALIDA,
+                com.cinezone.demo.model.enums.BookingStatus.USADA,
+                com.cinezone.demo.model.enums.BookingStatus.CANCELADA
+        );
+        BigDecimal salesEf = bookingRepository.sumTotalByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt(), estadosValidos);
         if (salesEf == null) salesEf = BigDecimal.ZERO;
-        BigDecimal salesOt = bookingRepository.sumTotalOtrosByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt());
+        BigDecimal salesOt = bookingRepository.sumTotalOtrosByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt(), estadosValidos);
         if (salesOt == null) salesOt = BigDecimal.ZERO;
 
         BigDecimal ingresos = cashMovementRepository.sumIngresosByShift(shift.getId());
@@ -266,9 +271,14 @@ public class TaquillaServiceImpl implements TaquillaService {
         com.cinezone.demo.model.entity.CashShift shift = cashShiftRepository.findTopByUserAndStatusOrderByOpenedAtDesc(currentUser, com.cinezone.demo.model.entity.CashShift.CashShiftStatus.ABIERTA)
                 .orElseThrow(() -> new BusinessRuleException("No tienes ninguna caja abierta."));
         
-        BigDecimal salesEf = bookingRepository.sumTotalByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt());
+        java.util.Collection<com.cinezone.demo.model.enums.BookingStatus> estadosValidos = java.util.Arrays.asList(
+                com.cinezone.demo.model.enums.BookingStatus.VALIDA,
+                com.cinezone.demo.model.enums.BookingStatus.USADA,
+                com.cinezone.demo.model.enums.BookingStatus.CANCELADA
+        );
+        BigDecimal salesEf = bookingRepository.sumTotalByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt(), estadosValidos);
         if (salesEf == null) salesEf = BigDecimal.ZERO;
-        BigDecimal salesOt = bookingRepository.sumTotalOtrosByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt());
+        BigDecimal salesOt = bookingRepository.sumTotalOtrosByEmployeeAndDate(currentUser.getId(), shift.getOpenedAt(), estadosValidos);
         if (salesOt == null) salesOt = BigDecimal.ZERO;
 
         BigDecimal ingresos = cashMovementRepository.sumIngresosByShift(shift.getId());
