@@ -131,7 +131,7 @@ public class BirthdayBenefitIntegrationTest {
 
         List<PendingBenefit> benefits = pendingBenefitRepository.findByEstado(BenefitStatus.DISPONIBLE);
         assertFalse(benefits.isEmpty());
-        assertEquals("ENTRADA_GRATIS_CUMPLEAÃ‘OS", benefits.get(0).getTipoBeneficio());
+        assertEquals("ENTRADA_GRATIS_CUMPLEAÃƒâ€˜OS", benefits.get(0).getTipoBeneficio());
     }
 
     @Test
@@ -155,7 +155,7 @@ public class BirthdayBenefitIntegrationTest {
         assertEquals(2, pendingBenefitRepository.count());
     }
 
-    // â”€â”€â”€ 6 combinaciones de la tabla de verdad â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ 6 combinaciones de la tabla de verdad Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     @Test
     void testTV1_NegroSedeVip_EntradaVip_Cantidad1() {

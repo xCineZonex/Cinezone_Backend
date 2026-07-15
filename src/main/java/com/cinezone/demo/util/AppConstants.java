@@ -7,4 +7,5 @@ public final class AppConstants {
     }
 
     public static final String FORMATO_TODOS = "TODOS";
+    public static final String BENEFICIO_CUMPLEANOS = "ENTRADA_GRATIS_CUMPLEANOS";
 }
