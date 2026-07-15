@@ -108,7 +108,7 @@ public class SeatLockingIntegrationTest {
         bookingService.lockSeat(req, user1);
 
         BusinessRuleException ex = assertThrows(BusinessRuleException.class, () -> bookingService.lockSeat(req, user2));
-        assertTrue(ex.getMessage().contains("ya está siendo reservado por otra persona"));
+        assertTrue(ex.getMessage().contains("ya esta siendo reservado por otra persona"));
     }
     
     @Test

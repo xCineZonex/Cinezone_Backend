@@ -423,7 +423,7 @@ public class BookingServiceImpl implements BookingService {
                 redisTemplate.expire(redisKey, java.time.Duration.ofSeconds(seatLockTtlSeconds));
                 return;
             }
-            throw new BusinessRuleException("El asiento seleccionado ya estÃƒÂ¡ siendo reservado por otra persona.");
+            throw new BusinessRuleException("El asiento seleccionado ya esta siendo reservado por otra persona.");
         }
     }
 
@@ -508,7 +508,7 @@ public class BookingServiceImpl implements BookingService {
         if (currentUser != null && currentUser.getRol() == com.cinezone.demo.model.enums.Role.CLIENT) {
             java.time.LocalDateTime now = java.time.LocalDateTime.now();
             List<com.cinezone.demo.model.entity.PendingBenefit> benefits = pendingBenefitRepository.findByUserAndTipoBeneficioAndEstadoAndFechaExpiracionAfter(
-                currentUser, "ENTRADA_GRATIS_CUMPLEAÃƒâ€˜OS", com.cinezone.demo.model.enums.BenefitStatus.DISPONIBLE, now);
+                currentUser, com.cinezone.demo.util.AppConstants.BENEFICIO_CUMPLEANOS, com.cinezone.demo.model.enums.BenefitStatus.DISPONIBLE, now);
             
             if (!benefits.isEmpty()) {
                 com.cinezone.demo.model.entity.PendingBenefit b = benefits.get(0);
